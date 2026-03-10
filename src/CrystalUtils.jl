@@ -1,5 +1,8 @@
 module CrystalUtils
 
+using LinearAlgebra
+using StaticArrays
+
 include("type.jl")
 include("lattice.jl")
 

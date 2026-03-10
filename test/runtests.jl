@@ -1,6 +1,16 @@
 using CrystalUtils
-using Test
+using Documenter
 
-@testset "CrystalUtils.jl" begin
-    # Write your tests here.
-end
+DocMeta.setdocmeta!(
+    CrystalUtils,
+    :DocTestSetup, :(using CrystalUtils);
+    recursive=true,
+)
+doctest(
+    CrystalUtils,
+    fix=true,  # update all the output in `jldoctest`
+)
+
+using TestItemRunner
+
+@run_package_tests verbose = true

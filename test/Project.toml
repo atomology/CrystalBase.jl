@@ -2,9 +2,10 @@
 CrystalUtils = "0ae0509d-b425-412a-aec4-62d47edd1221"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
+TestItemRunner = "f8b46487-2199-4994-9208-9a1283c18c0a"
 
 [sources]
 CrystalUtils = {path = ".."}
 
 [compat]
-Documenter = "1.10"
+TestItemRunner = "1.1"
