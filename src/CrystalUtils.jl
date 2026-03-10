@@ -1,5 +1,6 @@
 module CrystalUtils
 
-# Write your package code here.
+include("type.jl")
+include("lattice.jl")
 
 end
