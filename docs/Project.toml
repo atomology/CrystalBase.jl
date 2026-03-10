@@ -1,0 +1,3 @@
+[deps]
+CrystalUtils = "0ae0509d-b425-412a-aec4-62d47edd1221"
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
