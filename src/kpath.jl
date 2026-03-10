@@ -32,12 +32,7 @@ end
 function KPath(recip_lattice, points, indices, labels)
     rlatt = mat3(recip_lattice)
     T = eltype(rlatt)
-    return KPath{T}(
-        rlatt,
-        Vector{Vec3{T}}(points),
-        Vector{Int}(indices),
-        string.(labels),
-    )
+    return KPath{T}(rlatt, Vector{Vec3{T}}(points), Vector{Int}(indices), string.(labels))
 end
 
 function Base.length(kpath::KPath)
@@ -79,9 +74,7 @@ function KSegment(recip_lattice, segments, coords)
     rlatt = mat3(recip_lattice)
     T = eltype(rlatt)
     return KSegment{T}(
-        rlatt,
-        Vector{Vector{String}}(segments),
-        Dict{String,Vec3{T}}(coords),
+        rlatt, Vector{Vector{String}}(segments), Dict{String,Vec3{T}}(coords)
     )
 end
 
@@ -191,8 +184,7 @@ the two kpoints, respectively.
 - `labels`: labels of high-symmetry kpoints
 """
 function merge_nearby_labels(
-    indices::AbstractVector{<:Integer},
-    labels::AbstractVector{<:AbstractString},
+    indices::AbstractVector{<:Integer}, labels::AbstractVector{<:AbstractString}
 )
     grps = group_nearby_indices(indices)
     labs = map(grps) do idxs

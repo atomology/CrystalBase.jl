@@ -1,4 +1,4 @@
-export vec3, mat3, stringvec3
+export Vec3, vec3, Mat3, mat3, StringVec3, stringvec3
 
 """
 Length-3 vector type.
@@ -67,7 +67,6 @@ function vec3 end
 vec3(v::Vec3) = v
 vec3(v::AbstractVector) = Vec3(v)
 vec3(x, y, z) = Vec3(x, y, z)
-
 
 """
 3 x 3 matrix type.
@@ -143,7 +142,6 @@ mat3(cols::AbstractVector{<:AbstractVector}) = Mat3(reduce(hcat, cols))
 
 # Each column of the matrix is a vector.
 vec3(A::AbstractMatrix) = Vec3(Vec3.(eachcol(A)))
-
 
 """
 Pair type associating a `String` with a `Vec3`.

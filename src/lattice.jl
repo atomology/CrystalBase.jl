@@ -131,7 +131,7 @@ true
 ```
 """
 function real_lattice(recip_lattice...)
-    reciprocal_lattice(recip_lattice...)
+    return reciprocal_lattice(recip_lattice...)
 end
 
 """

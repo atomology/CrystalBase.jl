@@ -1,13 +1,13 @@
 using CrystalBase
 using Documenter
 
-DocMeta.setdocmeta!(CrystalBase, :DocTestSetup, :(using CrystalBase); recursive = true)
+DocMeta.setdocmeta!(CrystalBase, :DocTestSetup, :(using CrystalBase); recursive=true)
 
 makedocs(;
-    modules = [CrystalBase],
-    authors = "Junfeng Qiao <qiaojunfeng@outlook.com> and contributors",
-    sitename = "CrystalBase.jl",
-    pages = [
+    modules=[CrystalBase],
+    authors="Junfeng Qiao <qiaojunfeng@outlook.com> and contributors",
+    sitename="CrystalBase.jl",
+    pages=[
         "Home" => "index.md",
         "API" => [
             "Type" => "api/type.md",
@@ -17,4 +17,4 @@ makedocs(;
     ],
 )
 
-deploydocs(; repo = "github.com/atomology/CrystalBase.jl", devbranch = "main")
+deploydocs(; repo="github.com/atomology/CrystalBase.jl", devbranch="main")
