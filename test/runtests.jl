@@ -8,7 +8,7 @@ DocMeta.setdocmeta!(
 )
 doctest(
     CrystalBase,
-    fix=true,  # update all the output in `jldoctest`
+    # fix=true,  # update all the output in `jldoctest`
 )
 
 using TestItemRunner
