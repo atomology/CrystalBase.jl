@@ -1,4 +1,3 @@
-
 @testitem "group_nearby_indices" begin
     using CrystalBase: group_nearby_indices
     indices = [1, 2, 4, 5, 6]
