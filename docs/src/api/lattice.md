@@ -1,7 +1,7 @@
 # Lattice
 
 ```@meta
-CurrentModule = CrystalUtils
+CurrentModule = CrystalBase
 ```
 
 ## Index
@@ -15,7 +15,7 @@ Pages = [
 ## Documentation
 
 ```@autodocs
-Modules = [CrystalUtils]
+Modules = [CrystalBase]
 Pages = [
     "lattice.jl",
 ]

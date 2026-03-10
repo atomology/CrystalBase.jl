@@ -1,13 +1,13 @@
-using CrystalUtils
+using CrystalBase
 using Documenter
 
 DocMeta.setdocmeta!(
-    CrystalUtils,
-    :DocTestSetup, :(using CrystalUtils);
+    CrystalBase,
+    :DocTestSetup, :(using CrystalBase);
     recursive=true,
 )
 doctest(
-    CrystalUtils,
+    CrystalBase,
     fix=true,  # update all the output in `jldoctest`
 )
 

@@ -23,7 +23,7 @@ Convert input to Vec3-compatible representation.
     This is not defined as a constructor of `Vec3` to avoid type piracy.
 
 # Examples
-```jldoctest vec3; setup = :(using CrystalUtils, StaticArrays)
+```jldoctest vec3; setup = :(using CrystalBase, StaticArrays)
 v = [1.0, 2.0, 3.0];
 vec3(v)
 # output
@@ -92,7 +92,7 @@ Convert input to `Mat3`.
     This is not defined as a constructor of `Mat3` to avoid type piracy.
 
 # Examples
-```jldoctest mat3; setup = :(using CrystalUtils, StaticArrays)
+```jldoctest mat3; setup = :(using CrystalBase, StaticArrays)
 A = [1.0 2.0 3.0; 4.0 5.0 6.0; 7.0 8.0 9.0];
 mat3(A)
 # output
@@ -164,7 +164,7 @@ Build a `StringVec3` pair from label/name and coordinates.
 - `Pair` and one-entry `Dict` inputs are also supported.
 
 # Examples
-```jldoctest stringvec3; setup = :(using CrystalUtils, StaticArrays)
+```jldoctest stringvec3; setup = :(using CrystalBase, StaticArrays)
 stringvec3("Si", [0.0, 0.5, 0.5])
 # output
 "Si" => [0.0, 0.5, 0.5]

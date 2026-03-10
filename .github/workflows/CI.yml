@@ -69,6 +69,6 @@ jobs:
         shell: julia --project=docs --color=yes {0}
         run: |
           using Documenter: DocMeta, doctest
-          using CrystalUtils
-          DocMeta.setdocmeta!(CrystalUtils, :DocTestSetup, :(using CrystalUtils); recursive=true)
-          doctest(CrystalUtils)
+          using CrystalBase
+          DocMeta.setdocmeta!(CrystalBase, :DocTestSetup, :(using CrystalBase); recursive=true)
+          doctest(CrystalBase)

@@ -1,4 +1,4 @@
-module CrystalUtils
+module CrystalBase
 
 using LinearAlgebra
 using StaticArrays

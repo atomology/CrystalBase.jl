@@ -1,7 +1,7 @@
 ```@meta
-CurrentModule = CrystalUtils
+CurrentModule = CrystalBase
 ```
 
-# CrystalUtils
+# CrystalBase
 
-Documentation for [CrystalUtils](https://github.com/atomology/CrystalUtils.jl).
+Documentation for [CrystalBase](https://github.com/atomology/CrystalBase.jl).

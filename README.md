@@ -1,11 +1,11 @@
-# CrystalUtils
+# CrystalBase
 
-[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://atomology.github.io/CrystalUtils.jl/stable/)
-[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://atomology.github.io/CrystalUtils.jl/dev/)
-[![Build Status](https://github.com/atomology/CrystalUtils.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/atomology/CrystalUtils.jl/actions/workflows/CI.yml?query=branch%3Amain)
-[![Coverage](https://codecov.io/gh/atomology/CrystalUtils.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/atomology/CrystalUtils.jl)
+[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://atomology.github.io/CrystalBase.jl/stable/)
+[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://atomology.github.io/CrystalBase.jl/dev/)
+[![Build Status](https://github.com/atomology/CrystalBase.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/atomology/CrystalBase.jl/actions/workflows/CI.yml?query=branch%3Amain)
+[![Coverage](https://codecov.io/gh/atomology/CrystalBase.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/atomology/CrystalBase.jl)
 
-`CrystalUtils.jl` is a tiny Julia package for working with crystal structures in
+`CrystalBase.jl` is a tiny Julia package for working with crystal structures in
 real and reciprocal space.
 
 The package only defines a few container types and provides some utility functions.
@@ -15,7 +15,7 @@ in other packages.
 ## Example
 
 ```julia
-julia> using CrystalUtils
+julia> using CrystalBase
 
 # Define a matrix for lattice vectors
 julia> a1, a2, a3 = [1.0, 0.0, 0.0], [0.0, 2.0, 0.0], [0.0, 0.0, 3.0]

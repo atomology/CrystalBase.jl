@@ -17,7 +17,7 @@ lattice vectors, can be
 Reciprocal lattice vectors as [`Mat3`](@ref) matrix.
 
 # Examples
-```jldoctest reciprocal_lattice; setup = :(using CrystalUtils)
+```jldoctest reciprocal_lattice; setup = :(using CrystalBase)
 a1, a2, a3 = [0.0, 1.0, 2.0], [3.0, 0.0, 4.0], [5.0, 6.0, 0.0];
 reciprocal_lattice(a1, a2, a3)
 # output
@@ -65,7 +65,7 @@ end
 Return (real or reciprocal) lattice vectors from [`Mat3`](@ref) matrix columns.
 
 # Examples
-```jldoctest lattice_vectors; setup = :(using CrystalUtils)
+```jldoctest lattice_vectors; setup = :(using CrystalBase)
 lattice = mat3([0.0, 1.0, 2.0], [3.0, 0.0, 4.0], [5.0, 6.0, 0.0]);
 lattice_vectors(lattice)
 # output
@@ -94,7 +94,7 @@ Reciprocal lattice vectors, can be
 Real-space lattice vectors as [`Mat3`](@ref) matrix.
 
 # Examples
-```jldoctest real_lattice; setup = :(using CrystalUtils)
+```jldoctest real_lattice; setup = :(using CrystalBase)
 b1, b2, b3 = [0.0, 1.0, 2.0], [3.0, 0.0, 4.0], [5.0, 6.0, 0.0]
 real_lattice(b1, b2, b3)
 # output
@@ -147,7 +147,7 @@ Convert fractional to Cartesian coordinates based on lattice vectors.
 - `vec`: a vector or a list of vectors in fractional coordinates.
 
 # Examples
-```jldoctest frac2cart; setup = :(using CrystalUtils: frac2cart)
+```jldoctest frac2cart; setup = :(using CrystalBase: frac2cart)
 lattice = [[0.0, 1.0, 2.0], [3.0, 0.0, 4.0], [5.0, 6.0, 0.0]];
 positions = [[0.1, 0.2, 0.3], [1.0, 2.0, 3.0]];
 frac2cart(lattice, positions[1])
@@ -191,7 +191,7 @@ Convert Cartesian to fractional coordinates based on lattice vectors.
 - `vec`: a vector or a list of vectors in Cartesian coordinates.
 
 # Examples
-```jldoctest cart2frac; setup = :(using CrystalUtils: cart2frac, frac2cart)
+```jldoctest cart2frac; setup = :(using CrystalBase: cart2frac, frac2cart)
 lattice = [[0.0, 1.0, 2.0], [3.0, 0.0, 4.0], [5.0, 6.0, 0.0]];
 positions = [[2.1, 1.9, 1.0], [21.0, 19.0, 10.0]];
 frac2cart(lattice, cart2frac(lattice, positions[1])) ≈ positions[1]

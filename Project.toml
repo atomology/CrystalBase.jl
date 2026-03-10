@@ -1,4 +1,4 @@
-name = "CrystalUtils"
+name = "CrystalBase"
 uuid = "0ae0509d-b425-412a-aec4-62d47edd1221"
 version = "0.1.0"
 authors = ["Junfeng Qiao <qiaojunfeng@outlook.com> and contributors"]
