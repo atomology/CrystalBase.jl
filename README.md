@@ -14,6 +14,8 @@ in other packages.
 
 ## Example
 
+### Real and reciprocal lattice vectors
+
 ```julia
 julia> using CrystalBase
 
@@ -39,13 +41,49 @@ julia> lattice_vectors(recip_lattice)
  [0.0, 3.141592653589793, 0.0]
  [0.0, 0.0, 2.0943951023931953]
 
+# Or a convenience function to directly get the vectors
+julia> reciprocal_lattice_vectors(a1, a2, a3)
+3-element Vector{StaticArraysCore.SVector{3, Float64}}:
+ [6.283185307179586, 0.0, 0.0]
+ [0.0, 3.141592653589793, 0.0]
+ [0.0, 0.0, 2.0943951023931953]
+
 # Compute the real-space lattice vectors
 julia> real_lattice(recip_lattice)
 3×3 StaticArraysCore.SMatrix{3, 3, Float64, 9} with indices SOneTo(3)×SOneTo(3):
  1.0  0.0  0.0
  0.0  2.0  0.0
  0.0  0.0  3.0
+```
 
+### Fractional to Cartesian coordinates interconversion
+
+```julia
+julia> lattice = mat3([1.0, 0.0, 0.0], [0.0, 2.0, 0.0], [0.0, 0.0, 3.0])
+julia> frac_coords = [0.5, 0.5, 0.5]
+julia> cart_coords = frac_to_cart(lattice, frac_coords)
+3-element StaticArraysCore.SVector{3, Float64} with indices SOneTo(3):
+ 0.5
+ 1.0
+ 1.5
+
+# Also support multiple coordinates at once
+julia> frac_to_cart(lattice, [cart_coords, cart_coords])
+2-element Vector{StaticArraysCore.SVector{3, Float64}}:
+ [0.5, 2.0, 4.5]
+ [0.5, 2.0, 4.5]
+
+# Convert back to fractional coordinates
+julia> cart_to_frac(lattice, cart_coords)
+3-element StaticArraysCore.SVector{3, Float64} with indices SOneTo(3):
+ 0.5
+ 0.5
+ 0.5
+```
+
+### K-point paths in the Brillouin zone
+
+```julia
 # Define a kpoint path with explicit kpoint coordinates along the path
 julia> points = [[i/10, 0.0, 0.0] for i in 0:5]
 julia> indices = [1, 6]

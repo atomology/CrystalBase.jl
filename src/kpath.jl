@@ -276,7 +276,7 @@ end
 Get a 1D vector of cumulative distance along the kpath.
 """
 function linear_path(kpath::KPath)
-    kpts_cart = frac2cart(kpath.recip_lattice, kpath.points)
+    kpts_cart = frac_to_cart(kpath.recip_lattice, kpath.points)
     x = linear_path(kpts_cart, kpath.indices)
     return x
 end
