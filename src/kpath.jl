@@ -39,6 +39,33 @@ function Base.length(kpath::KPath)
     return length(kpath.points)
 end
 
+"""
+    $(SIGNATURES)
+
+Convert labels of high-symmetry kpoints in `kpath` to unicode string.
+"""
+function unicode_kpoint_labels!(kpath::KPath)
+    kpath.labels = unicode_kpoint_labels(kpath.labels)
+end
+
+function Base.show(io::IO, kpath::KPath)
+    n_kpts = length(kpath.points)
+    return print(io, "KPath($(n_kpts) kpoints, [$(join(labels, " → "))])")
+end
+
+function Base.show(io::IO, ::MIME"text/plain", kpath::KPath{T}) where {T}
+    n_kpts = length(kpath.points)
+    println(io, "KPath{$T} with $(n_kpts) k-points and $(length(labels)) high-symmetry labels:")
+    println(io, "  Path: $(join(labels, " → "))")
+    println(io, "  High-symmetry k-points:")
+    for (i, (idx, lab)) in enumerate(zip(kpath.indices, labels))
+        k = kpath.points[idx]
+        print(io, "    $(lpad(idx, ndigits(n_kpts))): $(rpad(lab, maximum(length, labels)))  ")
+        print(io, "($(join(round.(k, sigdigits=4), ", ")))")
+        i < length(kpath.indices) && println(io)
+    end
+end
+
 function reciprocal_lattice(kpath::KPath)
     return kpath.recip_lattice
 end
@@ -67,19 +94,47 @@ struct KSegment{T<:Real}
     segments::Vector{Vector{String}}
 
     "Coordinates of high-symmetry kpoints"
-    coords::Dict{String,Vec3{T}}
+    coords::OrderedDict{String,Vec3{T}}
 end
 
 function KSegment(recip_lattice, segments, coords)
     rlatt = mat3(recip_lattice)
     T = eltype(rlatt)
     return KSegment{T}(
-        rlatt, Vector{Vector{String}}(segments), Dict{String,Vec3{T}}(coords)
+        rlatt, Vector{Vector{String}}(segments), OrderedDict{String,Vec3{T}}(coords)
     )
 end
 
 function reciprocal_lattice(kseg::KSegment)
     return kseg.recip_lattice
+end
+
+function unicode_kpoint_labels!(kseg::KSegment)
+    kseg.segments = map(kseg.segments) do seg
+        unicode_kpoint_labels(seg)
+    end
+    kseg.coords = Dict(
+        unicode_kpoint_labels(k) => v for (k, v) in kseg.coords
+    )
+end
+
+function Base.show(io::IO, kseg::KSegment)
+    segs = [join(s, " → ") for s in kseg.segments]
+    return print(io, "KSegment([$(join(segs, " | "))])")
+end
+
+function Base.show(io::IO, ::MIME"text/plain", kseg::KSegment{T}) where {T}
+    n_seg = length(kseg.segments)
+    n_pts = length(kseg.coords)
+    println(io, "KSegment{$T} with $(n_seg) segment$(n_seg == 1 ? "" : "s") and $(n_pts) high-symmetry k-point$(n_pts == 1 ? "" : "s"):")
+    for (i, seg) in enumerate(kseg.segments)
+        println(io, "  Segment $i: $(join(seg, " → "))")
+    end
+    print(io, "  Coordinates:")
+    for (label, coord) in sort(collect(kseg.coords); by=first)
+        k = round.(coord; sigdigits=4)
+        print(io, "\n    $(rpad(label, maximum(length, keys(kseg.coords))))  ($(join(k, ", ")))")
+    end
 end
 
 """

@@ -46,10 +46,27 @@ julia> real_lattice(recip_lattice)
  0.0  2.0  0.0
  0.0  0.0  3.0
 
-# Define a kpoint path
+# Define a kpoint path with explicit kpoint coordinates along the path
 julia> points = [[i/10, 0.0, 0.0] for i in 0:5]
 julia> indices = [1, 6]
 julia> labels = ["Γ", "X"]
 julia> KPath(recip_lattice, points, indices, labels)
-KPath{Float64}([6.283185307179586 0.0 0.0; 0.0 3.141592653589793 0.0; 0.0 0.0 2.0943951023931953], StaticArraysCore.SVector{3, Float64}[[0.0, 0.0, 0.0], [0.1, 0.0, 0.0], [0.2, 0.0, 0.0], [0.3, 0.0, 0.0], [0.4, 0.0, 0.0], [0.5, 0.0, 0.0]], [1, 6], ["Γ", "X"])
+KPath{Float64} with 6 k-points and 2 high-symmetry labels:
+  Path: Γ → X
+  High-symmetry k-points:
+    1: Γ  (0.0, 0.0, 0.0)
+    6: X  (0.5, 0.0, 0.0)
+
+# Alternatively, only define the high-symmetry kpoints along the path, without
+# intermediate kpoints between them
+julia> segments = [["Γ", "M"], ["M", "K"]]
+julia> coords = Dict("Γ" => [0.0, 0.0, 0.0], "M" => [0.5, 0.5, 0.0], "K" => [1/3, 1/3, 0.0])
+julia> KSegment(recip_lattice, segments, coords)
+KSegment{Float64} with 2 segments and 3 high-symmetry k-points:
+  Segment 1: Γ → M
+  Segment 2: M → K
+  Coordinates:
+    K  (0.3333, 0.3333, 0.0)
+    M  (0.5, 0.5, 0.0)
+    Γ  (0.0, 0.0, 0.0)
 ```
