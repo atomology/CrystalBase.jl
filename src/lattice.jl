@@ -1,4 +1,6 @@
-export reciprocal_lattice, real_lattice, lattice_vectors, frac2cart, cart2frac
+export reciprocal_lattice, real_lattice
+export lattice_vectors, reciprocal_vectors, real_vectors
+export frac2cart, cart2frac
 
 """
     reciprocal_lattice(lattice)
@@ -60,26 +62,6 @@ function reciprocal_lattice(lattice...)
 end
 
 """
-    lattice_vectors(lattice)
-
-Return (real or reciprocal) lattice vectors from [`Mat3`](@ref) matrix columns.
-
-# Examples
-```jldoctest lattice_vectors; setup = :(using CrystalBase)
-lattice = mat3([0.0, 1.0, 2.0], [3.0, 0.0, 4.0], [5.0, 6.0, 0.0]);
-lattice_vectors(lattice)
-# output
-3-element Vector{StaticArraysCore.SVector{3, Float64}}:
- [0.0, 1.0, 2.0]
- [3.0, 0.0, 4.0]
- [5.0, 6.0, 0.0]
-```
-"""
-function lattice_vectors(lattice::Mat3)
-    return collect(vec3(lattice))
-end
-
-"""
     real_lattice(recip_lattice)
 
 Compute real-space lattice vectors from reciprocal lattice vectors.
@@ -132,6 +114,124 @@ true
 """
 function real_lattice(recip_lattice...)
     return reciprocal_lattice(recip_lattice...)
+end
+
+"""
+    lattice_vectors(lattice)
+
+Return (real or reciprocal) lattice vectors from [`Mat3`](@ref) matrix columns.
+
+# Examples
+```jldoctest lattice_vectors; setup = :(using CrystalBase)
+lattice = mat3([0.0, 1.0, 2.0], [3.0, 0.0, 4.0], [5.0, 6.0, 0.0]);
+lattice_vectors(lattice)
+# output
+3-element Vector{StaticArraysCore.SVector{3, Float64}}:
+ [0.0, 1.0, 2.0]
+ [3.0, 0.0, 4.0]
+ [5.0, 6.0, 0.0]
+```
+"""
+function lattice_vectors(lattice::Mat3)
+    return collect(vec3(lattice))
+end
+
+"""
+    reciprocal_vectors(lattice)
+    reciprocal_vectors(a1, a2, a3)
+
+Return reciprocal lattice vectors from real lattice.
+
+This returns vectors instead of `Mat3` matrix (see [`reciprocal_lattice`](@ref) for that).
+
+# Arguments
+lattice vectors, can be
+  - a matrix (each column is a lattice vector)
+  - a vector of lattice vectors
+  - or anything [`mat3`](@ref) accepts
+
+# Examples
+```jldoctest reciprocal_vectors; setup = :(using CrystalBase)
+a1, a2, a3 = [0.0, 1.0, 2.0], [3.0, 0.0, 4.0], [5.0, 6.0, 0.0];
+reciprocal_vectors(a1, a2, a3)
+# output
+3-element Vector{StaticArraysCore.SVector{3, Float64}}:
+ [-2.6927937030769655, 2.243994752564138, 2.019595277307724]
+ [1.3463968515384828, -1.1219973762820687, 0.5609986881410344]
+ [0.4487989505128276, 0.6731984257692414, -0.3365992128846207]
+```
+
+```jldoctest reciprocal_vectors
+lattice = [a1, a2, a3];
+reciprocal_vectors(lattice)
+# output
+3-element Vector{StaticArraysCore.SVector{3, Float64}}:
+ [-2.6927937030769655, 2.243994752564138, 2.019595277307724]
+ [1.3463968515384828, -1.1219973762820687, 0.5609986881410344]
+ [0.4487989505128276, 0.6731984257692414, -0.3365992128846207]
+```
+
+```jldoctest reciprocal_vectors
+lattice = mat3(a1, a2, a3);
+reciprocal_vectors(lattice)
+# output
+3-element Vector{StaticArraysCore.SVector{3, Float64}}:
+ [-2.6927937030769655, 2.243994752564138, 2.019595277307724]
+ [1.3463968515384828, -1.1219973762820687, 0.5609986881410344]
+ [0.4487989505128276, 0.6731984257692414, -0.3365992128846207]
+```
+"""
+function reciprocal_vectors(lattice...)
+    return lattice_vectors(reciprocal_lattice(lattice...))
+end
+
+"""
+    real_vectors(lattice)
+    real_vectors(a1, a2, a3)
+
+Return real-space lattice vectors from reciprocal lattice.
+
+This returns vectors instead of `Mat3` matrix (see [`real_lattice`](@ref) for that).
+
+# Arguments
+Reciprocal lattice vectors, can be
+  - a matrix (each column is a reciprocal lattice vector)
+  - a vector of reciprocal lattice vectors
+  - or anything [`mat3`](@ref) accepts
+
+# Examples
+```jldoctest real_vectors; setup = :(using CrystalBase)
+b1, b2, b3 = [0.0, 1.0, 2.0], [3.0, 0.0, 4.0], [5.0, 6.0, 0.0]
+real_vectors(b1, b2, b3)
+# output
+3-element Vector{StaticArraysCore.SVector{3, Float64}}:
+ [-2.6927937030769655, 2.243994752564138, 2.019595277307724]
+ [1.3463968515384828, -1.1219973762820687, 0.5609986881410344]
+ [0.4487989505128276, 0.6731984257692414, -0.3365992128846207]
+```
+
+```jldoctest real_vectors
+lattice = [b1, b2, b3];
+real_vectors(lattice)
+# output
+3-element Vector{StaticArraysCore.SVector{3, Float64}}:
+ [-2.6927937030769655, 2.243994752564138, 2.019595277307724]
+ [1.3463968515384828, -1.1219973762820687, 0.5609986881410344]
+ [0.4487989505128276, 0.6731984257692414, -0.3365992128846207]
+```
+
+```jldoctest real_vectors
+lattice = mat3(b1, b2, b3);
+real_vectors(lattice)
+# output
+3-element Vector{StaticArraysCore.SVector{3, Float64}}:
+ [-2.6927937030769655, 2.243994752564138, 2.019595277307724]
+ [1.3463968515384828, -1.1219973762820687, 0.5609986881410344]
+ [0.4487989505128276, 0.6731984257692414, -0.3365992128846207]
+```
+"""
+function real_vectors(lattice...)
+    return lattice_vectors(real_lattice(lattice...))
 end
 
 """
