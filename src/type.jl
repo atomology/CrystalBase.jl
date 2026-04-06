@@ -5,7 +5,7 @@ Length-3 vector type.
 
 For atom positions, kpoints, etc.
 """
-const Vec3{T} = SVector{3,T} where {T}
+const Vec3{T} = SVector{3, T} where {T}
 
 """
     vec3(v)
@@ -73,7 +73,7 @@ vec3(x, y, z) = Vec3(x, y, z)
 
 For lattice and reciprocal lattice.
 """
-const Mat3{T} = SMatrix{3,3,T,9} where {T}
+const Mat3{T} = SMatrix{3, 3, T, 9} where {T}
 
 """
     mat3(A)
@@ -148,7 +148,7 @@ Pair type associating a `String` with a `Vec3`.
 
 E.g., for pair of atom name -> position, kpoint label -> coordinates, etc.
 """
-const StringVec3{T} = Pair{String,Vec3{T}} where {T}
+const StringVec3{T} = Pair{String, Vec3{T}} where {T}
 
 """
     stringvec3(s, v)

@@ -15,7 +15,7 @@ kpoint coordinates along the path.
 # Fields
 $(FIELDS)
 """
-struct KPath{T<:Real}
+struct KPath{T <: Real}
     "Reciprocal lattice vectors (in units of 1/L, where L is unit of length)"
     recip_lattice::Mat3{T}
 
@@ -45,7 +45,7 @@ end
 Convert labels of high-symmetry kpoints in `kpath` to unicode string.
 """
 function unicode_kpoint_labels!(kpath::KPath)
-    kpath.labels = unicode_kpoint_labels(kpath.labels)
+    return kpath.labels = unicode_kpoint_labels(kpath.labels)
 end
 
 function Base.show(io::IO, kpath::KPath)
@@ -61,9 +61,10 @@ function Base.show(io::IO, ::MIME"text/plain", kpath::KPath{T}) where {T}
     for (i, (idx, lab)) in enumerate(zip(kpath.indices, labels))
         k = kpath.points[idx]
         print(io, "    $(lpad(idx, ndigits(n_kpts))): $(rpad(lab, maximum(length, labels)))  ")
-        print(io, "($(join(round.(k, sigdigits=4), ", ")))")
+        print(io, "($(join(round.(k, sigdigits = 4), ", ")))")
         i < length(kpath.indices) && println(io)
     end
+    return
 end
 
 function reciprocal_lattice(kpath::KPath)
@@ -82,7 +83,7 @@ See also [`KPath`](@ref) for an alternative representation of kpoint path.
 # Fields
 $(FIELDS)
 """
-struct KSegment{T<:Real}
+struct KSegment{T <: Real}
     "Reciprocal lattice vectors (in units of 1/L, where L is unit of length)"
     recip_lattice::Mat3{T}
 
@@ -94,14 +95,14 @@ struct KSegment{T<:Real}
     segments::Vector{Vector{String}}
 
     "Coordinates of high-symmetry kpoints"
-    coords::OrderedDict{String,Vec3{T}}
+    coords::OrderedDict{String, Vec3{T}}
 end
 
 function KSegment(recip_lattice, segments, coords)
     rlatt = mat3(recip_lattice)
     T = eltype(rlatt)
     return KSegment{T}(
-        rlatt, Vector{Vector{String}}(segments), OrderedDict{String,Vec3{T}}(coords)
+        rlatt, Vector{Vector{String}}(segments), OrderedDict{String, Vec3{T}}(coords)
     )
 end
 
@@ -113,7 +114,7 @@ function unicode_kpoint_labels!(kseg::KSegment)
     kseg.segments = map(kseg.segments) do seg
         unicode_kpoint_labels(seg)
     end
-    kseg.coords = Dict(
+    return kseg.coords = Dict(
         unicode_kpoint_labels(k) => v for (k, v) in kseg.coords
     )
 end
@@ -131,10 +132,11 @@ function Base.show(io::IO, ::MIME"text/plain", kseg::KSegment{T}) where {T}
         println(io, "  Segment $i: $(join(seg, " → "))")
     end
     print(io, "  Coordinates:")
-    for (label, coord) in sort(collect(kseg.coords); by=first)
-        k = round.(coord; sigdigits=4)
+    for (label, coord) in sort(collect(kseg.coords); by = first)
+        k = round.(coord; sigdigits = 4)
         print(io, "\n    $(rpad(label, maximum(length, keys(kseg.coords))))  ($(join(k, ", ")))")
     end
+    return
 end
 
 """
@@ -173,7 +175,7 @@ function unicode_kpoint_labels(labels::AbstractVector{<:AbstractString})
     )
     return map(labels) do l
         if occursin("_", l)
-            base, sub = split(l, "_"; limit=2)
+            base, sub = split(l, "_"; limit = 2)
             return get(label_maps, base, base) * get(label_maps, sub, sub)
         end
         return get(label_maps, l, l)
@@ -207,7 +209,7 @@ CrystalBase.group_nearby_indices([1, 2, 4, 5, 6])
  [4, 5, 6]
 ```
 """
-function group_nearby_indices(indices::AbstractVector{T}) where {T<:Integer}
+function group_nearby_indices(indices::AbstractVector{T}) where {T <: Integer}
     groups = Vector{Vector{T}}()
     isempty(indices) && return groups
     push!(groups, [indices[1]])
@@ -239,8 +241,8 @@ the two kpoints, respectively.
 - `labels`: labels of high-symmetry kpoints
 """
 function merge_nearby_labels(
-    indices::AbstractVector{<:Integer}, labels::AbstractVector{<:AbstractString}
-)
+        indices::AbstractVector{<:Integer}, labels::AbstractVector{<:AbstractString}
+    )
     grps = group_nearby_indices(indices)
     labs = map(grps) do idxs
         js = map(idxs) do i
@@ -253,9 +255,9 @@ function merge_nearby_labels(
 end
 
 function linear_path(
-    kpoints_cart::AbstractVector{<:AbstractVector{<:Real}},
-    indices::AbstractVector{<:Integer}=[],
-)
+        kpoints_cart::AbstractVector{<:AbstractVector{<:Real}},
+        indices::AbstractVector{<:Integer} = [],
+    )
     grps = group_nearby_indices(indices)
     x = [0.0; accumulate(+, norm.(diff(kpoints_cart)))]
 

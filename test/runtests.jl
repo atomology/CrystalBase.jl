@@ -11,7 +11,7 @@ if isnothing(filter_names)
 
     @run_package_tests verbose = true
 
-    DocMeta.setdocmeta!(CrystalBase, :DocTestSetup, :(using CrystalBase); recursive=true)
+    DocMeta.setdocmeta!(CrystalBase, :DocTestSetup, :(using CrystalBase); recursive = true)
     doctest(
         CrystalBase,
         # fix=true,  # update all the output in `jldoctest`
