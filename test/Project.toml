@@ -1,4 +1,5 @@
 [deps]
+Bravais = "ada6cbde-b013-4edf-aa94-f6abe8bd6e6b"
 Brillouin = "23470ee3-d0df-4052-8b1a-8cbd6363e7f0"
 CrystalBase = "0ae0509d-b425-412a-aec4-62d47edd1221"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"

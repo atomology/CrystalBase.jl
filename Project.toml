@@ -14,13 +14,17 @@ PeriodicTable = "7b2266bf-644c-5ea3-82d8-af4bbd25a884"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
 [weakdeps]
+Bravais = "ada6cbde-b013-4edf-aa94-f6abe8bd6e6b"
 Brillouin = "23470ee3-d0df-4052-8b1a-8cbd6363e7f0"
 Spglib = "f761d5c5-86db-4880-b97f-9680a7cccfb5"
 
 [extensions]
+CrystalBaseBrillouinExt = ["Brillouin"]
+CrystalBaseBravaisBrillouinExt = ["Bravais", "Brillouin"]
 CrystalBaseSpglibBrillouinExt = ["Spglib", "Brillouin"]
 
 [compat]
+Bravais = "0.2"
 Brillouin = "0.5.8"
 DocStringExtensions = "0.9"
 OrderedCollections = "1.8"

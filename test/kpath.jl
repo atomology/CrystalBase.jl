@@ -192,3 +192,15 @@ end
     x = linear_path(kp)[1]
     @test all(isapprox.(KPathEnv.x, x; atol = 1.0e-5))
 end
+
+@testitem "KPathInterpolant from KPath" setup = [KPathEnv] begin
+    import Bravais, Brillouin
+
+    kseg = KSegment(KPathEnv.recip_lattice, KPathEnv.kpoint_path)
+    kp = KPath(kseg, 5)
+    kpi = Brillouin.KPathInterpolant(kp)
+
+    @test all(isapprox.(kpi, kp.points; atol = 1.0e-5))
+    @test mat3(kpi.basis) == kp.recip_lattice
+    @test kpi.labels[1] == Dict(i => Symbol(l) for (i, l) in zip(kp.indices, kp.labels))
+end
