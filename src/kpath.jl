@@ -1,4 +1,4 @@
-export KPath, KSegment, linear_path
+export KPath, linear_path
 
 """
     $(TYPEDEF)
@@ -39,15 +39,6 @@ function Base.length(kpath::KPath)
     return length(kpath.points)
 end
 
-"""
-    $(SIGNATURES)
-
-Convert labels of high-symmetry kpoints in `kpath` to unicode string.
-"""
-function unicode_kpoint_labels!(kpath::KPath)
-    return kpath.labels = unicode_kpoint_labels(kpath.labels)
-end
-
 function Base.show(io::IO, kpath::KPath)
     n_kpts = length(kpath.points)
     return print(io, "KPath($(n_kpts) kpoints, [$(join(labels, " → "))])")
@@ -55,12 +46,12 @@ end
 
 function Base.show(io::IO, ::MIME"text/plain", kpath::KPath{T}) where {T}
     n_kpts = length(kpath.points)
-    println(io, "KPath{$T} with $(n_kpts) k-points and $(length(labels)) high-symmetry labels:")
-    println(io, "  Path: $(join(labels, " → "))")
+    println(io, "KPath{$T} with $(n_kpts) k-points and $(length(kpath.labels)) high-symmetry labels:")
+    println(io, "  Path: $(join(kpath.labels, " → "))")
     println(io, "  High-symmetry k-points:")
-    for (i, (idx, lab)) in enumerate(zip(kpath.indices, labels))
+    for (i, (idx, lab)) in enumerate(zip(kpath.indices, kpath.labels))
         k = kpath.points[idx]
-        print(io, "    $(lpad(idx, ndigits(n_kpts))): $(rpad(lab, maximum(length, labels)))  ")
+        print(io, "    $(lpad(idx, ndigits(n_kpts))): $(rpad(lab, maximum(length, kpath.labels)))  ")
         print(io, "($(join(round.(k, sigdigits = 4), ", ")))")
         i < length(kpath.indices) && println(io)
     end
@@ -72,118 +63,13 @@ function reciprocal_lattice(kpath::KPath)
 end
 
 """
-    $(TYPEDEF)
-
-Segments of high-symmetry kpoint path, each segment is a continuous path
-between high-symmetry kpoints. Different segments are disconnected in the
-Brillouin zone.
-
-See also [`KPath`](@ref) for an alternative representation of kpoint path.
-
-# Fields
-$(FIELDS)
-"""
-struct KSegment{T <: Real}
-    "Reciprocal lattice vectors (in units of 1/L, where L is unit of length)"
-    recip_lattice::Mat3{T}
-
-    """
-    Segments of high-symmetry kpoint path, each segment is a continuous path
-    between high-symmetry kpoints. Different segments are disconnected in the
-    Brillouin zone.
-    """
-    segments::Vector{Vector{String}}
-
-    "Coordinates of high-symmetry kpoints"
-    coords::OrderedDict{String, Vec3{T}}
-end
-
-function KSegment(recip_lattice, segments, coords)
-    rlatt = mat3(recip_lattice)
-    T = eltype(rlatt)
-    return KSegment{T}(
-        rlatt, Vector{Vector{String}}(segments), OrderedDict{String, Vec3{T}}(coords)
-    )
-end
-
-function reciprocal_lattice(kseg::KSegment)
-    return kseg.recip_lattice
-end
-
-function unicode_kpoint_labels!(kseg::KSegment)
-    kseg.segments = map(kseg.segments) do seg
-        unicode_kpoint_labels(seg)
-    end
-    return kseg.coords = Dict(
-        unicode_kpoint_labels(k) => v for (k, v) in kseg.coords
-    )
-end
-
-function Base.show(io::IO, kseg::KSegment)
-    segs = [join(s, " → ") for s in kseg.segments]
-    return print(io, "KSegment([$(join(segs, " | "))])")
-end
-
-function Base.show(io::IO, ::MIME"text/plain", kseg::KSegment{T}) where {T}
-    n_seg = length(kseg.segments)
-    n_pts = length(kseg.coords)
-    println(io, "KSegment{$T} with $(n_seg) segment$(n_seg == 1 ? "" : "s") and $(n_pts) high-symmetry k-point$(n_pts == 1 ? "" : "s"):")
-    for (i, seg) in enumerate(kseg.segments)
-        println(io, "  Segment $i: $(join(seg, " → "))")
-    end
-    print(io, "  Coordinates:")
-    for (label, coord) in sort(collect(kseg.coords); by = first)
-        k = round.(coord; sigdigits = 4)
-        print(io, "\n    $(rpad(label, maximum(length, keys(kseg.coords))))  ($(join(k, ", ")))")
-    end
-    return
-end
-
-"""
     $(SIGNATURES)
 
-Convert labels of high-symmetry kpoints to unicode string.
-
-# Examples
-```jldoctest unicode_kpoint_labels; setup = :(using CrystalBase)
-CrystalBase.unicode_kpoint_labels(["GAMMA", "DELTA_0", "LAMBDA_1", "SIGMA_2", "X"])
-# output
-5-element Vector{String}:
- "Γ"
- "Δ₀"
- "Λ₁"
- "Σ₂"
- "X"
-```
+Convert labels of high-symmetry kpoints in `kpath` to unicode string.
 """
-function unicode_kpoint_labels(labels::AbstractVector{<:AbstractString})
-    label_maps = Dict(
-        "GAMMA" => "Γ",
-        "DELTA" => "Δ",
-        "LAMBDA" => "Λ",
-        "SIGMA" => "Σ",
-        "0" => "₀",
-        "1" => "₁",
-        "2" => "₂",
-        "3" => "₃",
-        "4" => "₄",
-        "5" => "₅",
-        "6" => "₆",
-        "7" => "₇",
-        "8" => "₈",
-        "9" => "₉",
-    )
-    return map(labels) do l
-        if occursin("_", l)
-            base, sub = split(l, "_"; limit = 2)
-            return get(label_maps, base, base) * get(label_maps, sub, sub)
-        end
-        return get(label_maps, l, l)
-    end
-end
-
-function unicode_kpoint_labels(label::AbstractString)
-    return unicode_kpoint_labels([label])[1]
+function unicode_kpoint_labels!(kpath::KPath)
+    kpath.labels = unicode_kpoint_labels(kpath.labels)
+    return nothing
 end
 
 """
@@ -239,21 +125,30 @@ the two kpoints, respectively.
 # Arguments
 - `indices`: indices of high-symmetry kpoints, start from 1
 - `labels`: labels of high-symmetry kpoints
+
+# Return
+- `tick_indices`: indices of high-symmetry kpoints after merging
+- `tick_labels`: labels of high-symmetry kpoints after merging
 """
 function merge_nearby_labels(
         indices::AbstractVector{<:Integer}, labels::AbstractVector{<:AbstractString}
     )
     grps = group_nearby_indices(indices)
-    labs = map(grps) do idxs
+    tick_labs = map(grps) do idxs
         js = map(idxs) do i
             findfirst(==(i), indices)
         end
         join(labels[js], "|")
     end
-    jdxs = isempty(grps) ? grps : first.(grps)
-    return jdxs, labs
+    tick_idxs = isempty(grps) ? grps : first.(grps)
+    return tick_idxs, tick_labs
 end
 
+"""
+    $(SIGNATURES)
+
+Get a 1D vector of cumulative distance along the kpath.
+"""
 function linear_path(
         kpoints_cart::AbstractVector{<:AbstractVector{<:Real}},
         indices::AbstractVector{<:Integer} = [],
@@ -272,13 +167,124 @@ function linear_path(
     return x
 end
 
+function linear_path(kpoints_cart, indices, labels)
+    x = linear_path(kpoints_cart, indices)
+    tick_idxs, tick_labs = merge_nearby_labels(indices, labels)
+    return x, tick_idxs, tick_labs
+end
+
 """
     $(SIGNATURES)
 
-Get a 1D vector of cumulative distance along the kpath.
+Get a 1D vector of cumulative distance along the kpath, and the corresponding
+tick indices and labels for high-symmetry kpoints.
+
+# Return
+- `x`: 1D vector of cumulative distance along the kpath
+- `tick_indices`: indices of high-symmetry kpoints after merging
+- `tick_labels`: labels of high-symmetry kpoints after merging
 """
 function linear_path(kpath::KPath)
     kpts_cart = frac_to_cart(kpath.recip_lattice, kpath.points)
-    x = linear_path(kpts_cart, kpath.indices)
-    return x
+    return linear_path(kpts_cart, kpath.indices, kpath.labels)
+end
+
+"""
+    $(SIGNATURES)
+
+Generate a `KPath` containing kpoint coordinates that are exactly
+the same as wannier90.
+
+The kpoints are generated by the following criteria:
+- the kpath spacing of remaining segments are kept the same as the first segment
+- merge same high-symmetry labels at the corner between two segments; keep both
+    labels if the two labels (ending of the 1st segment and starting point of the
+    2nd segment) are different
+
+# Arguments
+- `kseg`: a `KSegment`
+- `n_points_first_segment`: number of kpoints in the first segment, remaining
+    segments will have the same spacing as the 1st segment. The default value
+    is 100, which is the same as wannier90 default value of `bands_num_points`.
+
+!!! note
+
+    This reproduce exactly the wannier90 behavior, if
+    - the `kseg` is generated from the `kpoint_path` obtained by
+            `WannierIO.read_win` which parses the `kpoint_path` block of `win` file,
+    - the `n_points` is the same as wannier90 `win` file input parameter `bands_num_points`,
+        which again can be obtained by `WannierIO.read_win`.
+"""
+function KPath(kseg::KSegment, n_points_first_segment::Integer = 100)
+    # Cartesian
+    coords_cart = OrderedDict(k => frac_to_cart(kseg.recip_lattice, v) for (k, v) in kseg.coords)
+
+    # kpath spacing from first two kpoints
+    isempty(kseg.segments) && error("kseg should have at least one segment")
+    length(kseg.segments[1]) < 2 && error("the first segment should have at least two kpoints")
+    k1, k2 = kseg.segments[1][1:2]
+    v = coords_cart[k2] - coords_cart[k1]
+    v_norm = norm(v)
+    dk = v_norm / n_points_first_segment
+
+    # kpoints along each segment
+    kpaths = Vector{Vector{Vec3{Float64}}}()
+    # symmetry points along each segment
+    indices = Vector{Vector{Int}}()
+    labels = Vector{Vector{String}}()
+
+    for seg in kseg.segments
+        kpoints_seg = Vector{Vec3{Float64}}()
+        indices_seg = Vector{Int}()
+        labels_seg = Vector{String}()
+
+        n_seg = length(seg) - 1
+        n_x_seg = 0
+        for j in 1:n_seg
+            k1 = seg[j]
+            k2 = seg[j + 1]
+
+            # One vector in each segment, from k1 to k2
+            v = coords_cart[k2] - coords_cart[k1]
+            v_norm = norm(v)
+
+            # By default julia rounds to even when the value is exactly x.5,
+            # but I want to round up to ensure the same behavior as wannier90.
+            # See round(Int, 1.5) and round(Int, 2.5) in julia.
+            n_v = round(Int, v_norm / dk, RoundNearestTiesUp)
+            # ensure at least the two ending points are there, if the v_norm is too small
+            n_v = max(n_v, 1)
+            x_v = collect(range(0, v_norm, n_v + 1))
+            dv = iszero(v_norm) ? v : v / v_norm
+
+            # column vector * row vector = matrix
+            kpt_v = dv * x_v'
+            kpt_v .+= coords_cart[k1]
+
+            if j == 1
+                push!(indices_seg, 1)
+                push!(labels_seg, k1)
+            else
+                # remove repeated points
+                popfirst!(x_v)
+                kpt_v = kpt_v[:, 2:end]
+            end
+            n_x_seg += length(x_v)
+            push!(indices_seg, n_x_seg)
+            push!(labels_seg, k2)
+
+            append!(kpoints_seg, collect(eachcol(kpt_v)))
+        end
+
+        push!(kpaths, kpoints_seg)
+        push!(indices, indices_seg)
+        push!(labels, labels_seg)
+    end
+
+    points = reduce(vcat, kpaths)
+    # To fractional coordinates
+    points = cart_to_frac(kseg.recip_lattice, points)
+    indices = reduce(vcat, indices)
+    labels = reduce(vcat, labels)
+    return KPath(kseg.recip_lattice, points, indices, labels)
 end

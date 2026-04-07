@@ -1,6 +1,6 @@
 name = "CrystalBase"
 uuid = "0ae0509d-b425-412a-aec4-62d47edd1221"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Junfeng Qiao <qiaojunfeng@outlook.com> and contributors"]
 
 [workspace]
@@ -10,10 +10,21 @@ projects = ["test", "docs"]
 DocStringExtensions = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 OrderedCollections = "bac558e1-5e72-5ebc-8fee-abe8a469f55d"
+PeriodicTable = "7b2266bf-644c-5ea3-82d8-af4bbd25a884"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
+[weakdeps]
+Brillouin = "23470ee3-d0df-4052-8b1a-8cbd6363e7f0"
+Spglib = "f761d5c5-86db-4880-b97f-9680a7cccfb5"
+
+[extensions]
+CrystalBaseSpglibBrillouinExt = ["Spglib", "Brillouin"]
+
 [compat]
+Brillouin = "0.5.8"
 DocStringExtensions = "0.9"
 OrderedCollections = "1.8"
+PeriodicTable = "1.1"
+Spglib = "0.6, 0.7, 0.8, 0.9, 1"
 StaticArrays = "1"
 julia = "1.12"

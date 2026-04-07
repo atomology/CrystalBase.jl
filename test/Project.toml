@@ -1,6 +1,9 @@
 [deps]
+Brillouin = "23470ee3-d0df-4052-8b1a-8cbd6363e7f0"
 CrystalBase = "0ae0509d-b425-412a-aec4-62d47edd1221"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+OrderedCollections = "bac558e1-5e72-5ebc-8fee-abe8a469f55d"
+Spglib = "f761d5c5-86db-4880-b97f-9680a7cccfb5"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 TestItemRunner = "f8b46487-2199-4994-9208-9a1283c18c0a"
