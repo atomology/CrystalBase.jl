@@ -51,7 +51,7 @@ reciprocal_lattice(lattice)
 """
 function reciprocal_lattice end
 
-function reciprocal_lattice(lattice::Mat3)
+function reciprocal_lattice(lattice::AbstractMatrix)
     M = mat3(lattice)
     # Always return a Mat3 as well
     return 2π * inv(lattice)'
