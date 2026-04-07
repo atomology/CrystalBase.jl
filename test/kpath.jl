@@ -204,3 +204,33 @@ end
     @test mat3(kpi.basis) == kp.recip_lattice
     @test kpi.labels[1] == Dict(i => Symbol(l) for (i, l) in zip(kp.indices, kp.labels))
 end
+
+@testitem "isapprox for KSegment and KPath" begin
+    # simple path
+    lattice = [1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0]
+    kpoint_path = [
+        ["G" => [0.0, 0.0, 0.0], "X" => [0.5, 0.0, 0.0]],
+        ["X" => [0.5, 0.0, 0.0], "L" => [1.0, 0.0, 0.0]],
+    ]
+    ks1 = KSegment(lattice, kpoint_path)
+    # small perturbation in coordinates
+    kpoint_path2 = [
+        ["G" => [1.0e-7, 0.0, 0.0], "X" => [0.5 + 1.0e-7, 0.0, 0.0]],
+        ["X" => [0.5 + 1.0e-7, 0.0, 0.0], "L" => [1.0 + 1.0e-7, 0.0, 0.0]],
+    ]
+    ks2 = KSegment(lattice, kpoint_path2)
+    @test isapprox(ks1, ks2; atol = 1e-6)
+    @test !isapprox(ks1, ks2)
+    # different labels -> not approx
+    kpoint_path3 = [
+        ["G" => [0.0, 0.0, 0.0], "Y" => [0.5, 0.0, 0.0]],
+    ]
+    ks3 = KSegment(lattice, kpoint_path3)
+    @test !isapprox(ks1, ks3; atol = 1e-6)
+
+    # KPath via KSegment
+    kp1 = KPath(ks1, 10)
+    kp2 = KPath(ks2, 10)
+    @test isapprox(kp1, kp2; atol = 1e-6)
+    @test !isapprox(kp1, kp2)
+end

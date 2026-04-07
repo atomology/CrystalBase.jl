@@ -288,3 +288,18 @@ function KPath(kseg::KSegment, n_points_first_segment::Integer = 100)
     labels = reduce(vcat, labels)
     return KPath(kseg.recip_lattice, points, indices, labels)
 end
+
+function Base.isapprox(a::KPath, b::KPath; kwargs...)
+    # indices and labels must match exactly
+    if a.indices != b.indices || a.labels != b.labels
+        return false
+    end
+    # reciprocal lattice and points compared approximately
+    if !isapprox(a.recip_lattice, b.recip_lattice; kwargs...)
+        return false
+    end
+    if length(a.points) != length(b.points)
+        return false
+    end
+    return all(isapprox.(a.points, b.points; kwargs...))
+end

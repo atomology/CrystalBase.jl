@@ -59,62 +59,6 @@ function Base.show(io::IO, ::MIME"text/plain", kseg::KSegment{T}) where {T}
     return
 end
 
-"""
-    $(SIGNATURES)
-
-Convert labels of high-symmetry kpoints to unicode string.
-
-# Examples
-```jldoctest unicode_kpoint_labels; setup = :(using CrystalBase)
-CrystalBase.unicode_kpoint_labels(["GAMMA", "DELTA_0", "LAMBDA_1", "SIGMA_2", "X"])
-# output
-5-element Vector{String}:
- "Γ"
- "Δ₀"
- "Λ₁"
- "Σ₂"
- "X"
-```
-"""
-function unicode_kpoint_labels(labels::AbstractVector{<:AbstractString})
-    label_maps = Dict(
-        "GAMMA" => "Γ",
-        "DELTA" => "Δ",
-        "LAMBDA" => "Λ",
-        "SIGMA" => "Σ",
-        "0" => "₀",
-        "1" => "₁",
-        "2" => "₂",
-        "3" => "₃",
-        "4" => "₄",
-        "5" => "₅",
-        "6" => "₆",
-        "7" => "₇",
-        "8" => "₈",
-        "9" => "₉",
-    )
-    return map(labels) do l
-        if occursin("_", l)
-            base, sub = split(l, "_"; limit = 2)
-            return get(label_maps, base, base) * get(label_maps, sub, sub)
-        end
-        return get(label_maps, l, l)
-    end
-end
-
-function unicode_kpoint_labels(label::AbstractString)
-    return unicode_kpoint_labels([label])[1]
-end
-
-function unicode_kpoint_labels!(kseg::KSegment)
-    kseg.segments = map(kseg.segments) do seg
-        unicode_kpoint_labels(seg)
-    end
-    return kseg.coords = Dict(
-        unicode_kpoint_labels(k) => v for (k, v) in kseg.coords
-    )
-end
-
 function _new_label(label::AbstractString, existing_labels::Union{AbstractVector, AbstractSet})
     max_tries = 10
     i = 1
@@ -201,4 +145,81 @@ Requires `using Spglib, Brillouin`.
 function KSegment(lattice::AbstractMatrix, atom_positions::AbstractVector, atom_symbols::AbstractVector{<:AbstractString})
     atom_numbers = atomic_number(atom_symbols)
     return KSegment(lattice, atom_positions, atom_numbers)
+end
+
+"""
+    $(SIGNATURES)
+
+Convert labels of high-symmetry kpoints to unicode string.
+
+# Examples
+```jldoctest unicode_kpoint_labels; setup = :(using CrystalBase)
+CrystalBase.unicode_kpoint_labels(["GAMMA", "DELTA_0", "LAMBDA_1", "SIGMA_2", "X"])
+# output
+5-element Vector{String}:
+ "Γ"
+ "Δ₀"
+ "Λ₁"
+ "Σ₂"
+ "X"
+```
+"""
+function unicode_kpoint_labels(labels::AbstractVector{<:AbstractString})
+    label_maps = Dict(
+        "GAMMA" => "Γ",
+        "DELTA" => "Δ",
+        "LAMBDA" => "Λ",
+        "SIGMA" => "Σ",
+        "0" => "₀",
+        "1" => "₁",
+        "2" => "₂",
+        "3" => "₃",
+        "4" => "₄",
+        "5" => "₅",
+        "6" => "₆",
+        "7" => "₇",
+        "8" => "₈",
+        "9" => "₉",
+    )
+    return map(labels) do l
+        if occursin("_", l)
+            base, sub = split(l, "_"; limit = 2)
+            return get(label_maps, base, base) * get(label_maps, sub, sub)
+        end
+        return get(label_maps, l, l)
+    end
+end
+
+function unicode_kpoint_labels(label::AbstractString)
+    return unicode_kpoint_labels([label])[1]
+end
+
+function unicode_kpoint_labels!(kseg::KSegment)
+    kseg.segments = map(kseg.segments) do seg
+        unicode_kpoint_labels(seg)
+    end
+    return kseg.coords = Dict(
+        unicode_kpoint_labels(k) => v for (k, v) in kseg.coords
+    )
+end
+
+function Base.isapprox(a::KSegment, b::KSegment; kwargs...)
+    # segments and labels must match exactly
+    if a.segments != b.segments
+        return false
+    end
+    # compare reciprocal lattices approximately
+    if !isapprox(a.recip_lattice, b.recip_lattice; kwargs...)
+        return false
+    end
+    # compare coords: same keys and approximate numeric values
+    if keys(a.coords) != keys(b.coords)
+        return false
+    end
+    for k in keys(a.coords)
+        if !isapprox(a.coords[k], b.coords[k]; kwargs...)
+            return false
+        end
+    end
+    return true
 end
