@@ -1,4 +1,4 @@
-# Types
+# Atom
 
 ```@meta
 CurrentModule = CrystalBase
@@ -8,7 +8,7 @@ CurrentModule = CrystalBase
 
 ```@index
 Pages = [
-    "kpath.md",
+    "atom.md",
 ]
 ```
 
@@ -17,7 +17,6 @@ Pages = [
 ```@autodocs
 Modules = [CrystalBase]
 Pages = [
-    "ksegment.jl",
-    "kpath.jl",
+    "atom.jl",
 ]
 ```

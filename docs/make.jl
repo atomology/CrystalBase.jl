@@ -12,6 +12,7 @@ makedocs(;
         "API" => [
             "Type" => "api/type.md",
             "Lattice" => "api/lattice.md",
+            "Atom" => "api/atom.md",
             "Kpoint Path" => "api/kpath.md",
         ],
     ],
