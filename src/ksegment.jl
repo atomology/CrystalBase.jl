@@ -159,7 +159,7 @@ function KSegment(
         # start kpoint
         label1 = String(k1.first)
         v1 = Vec3{Float64}(k1.second)
-        if label1 ∈ keys(coords) && coords[label1] ≉ v1
+        if (label1 ∈ keys(coords)) && (coords[label1] ≉ v1)
             # convert to Tuple for better printing without type info
             @warn warn_str label = label1 k1 = Tuple(coords[label1]) k2 = Tuple(v1)
             label1 = _new_label(label1, keys(coords))
@@ -168,13 +168,13 @@ function KSegment(
         # end kpoint
         label2 = String(k2.first)
         v2 = Vec3{Float64}(k2.second)
-        if label2 ∈ keys(coords) && coords[label2] ≉ v2
+        if (label2 ∈ keys(coords)) && (coords[label2] ≉ v2)
             @warn warn_str label = label2 k1 = Tuple(coords[label2]) k2 = Tuple(v2)
             label2 = _new_label(label2, keys(coords))
         end
         coords[label2] = v2
 
-        if length(segments) > 0 && label1 == segments[end][end]
+        if (length(segments) > 0) && (label1 == segments[end][end])
             push!(segments[end], label2)
         else
             push!(segments, [label1, label2])

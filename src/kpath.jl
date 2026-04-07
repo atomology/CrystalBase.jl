@@ -53,7 +53,7 @@ function Base.show(io::IO, ::MIME"text/plain", kpath::KPath{T}) where {T}
         k = kpath.points[idx]
         print(io, "    $(lpad(idx, ndigits(n_kpts))): $(rpad(lab, maximum(length, kpath.labels)))  ")
         print(io, "($(join(round.(k, sigdigits = 4), ", ")))")
-        i < length(kpath.indices) && println(io)
+        (i < length(kpath.indices)) && println(io)
     end
     return
 end
@@ -221,7 +221,7 @@ function KPath(kseg::KSegment, n_points_first_segment::Integer = 100)
 
     # kpath spacing from first two kpoints
     isempty(kseg.segments) && error("kseg should have at least one segment")
-    length(kseg.segments[1]) < 2 && error("the first segment should have at least two kpoints")
+    (length(kseg.segments[1]) < 2) && error("the first segment should have at least two kpoints")
     k1, k2 = kseg.segments[1][1:2]
     v = coords_cart[k2] - coords_cart[k1]
     v_norm = norm(v)
