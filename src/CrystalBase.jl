@@ -11,4 +11,6 @@ include("atom.jl")
 include("ksegment.jl")
 include("kpath.jl")
 
+include("precompile.jl")
+
 end

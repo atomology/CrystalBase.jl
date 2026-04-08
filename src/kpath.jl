@@ -29,7 +29,7 @@ struct KPath{T <: Real}
     labels::Vector{String}
 end
 
-function KPath(recip_lattice, points, indices, labels)
+function KPath(recip_lattice::AbstractMatrix, points::AbstractVector, indices::AbstractVector, labels::AbstractVector)
     rlatt = mat3(recip_lattice)
     T = eltype(rlatt)
     return KPath{T}(rlatt, Vector{Vec3{T}}(points), Vector{Int}(indices), string.(labels))
