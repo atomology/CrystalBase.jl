@@ -39,6 +39,10 @@ function Base.length(kpath::KPath)
     return length(kpath.points)
 end
 
+function Base.collect(kpath::KPath)
+    return copy(kpath.points)
+end
+
 function Base.show(io::IO, kpath::KPath)
     n_kpts = length(kpath.points)
     return print(io, "KPath($(n_kpts) kpoints, [$(join(labels, " → "))])")
@@ -254,12 +258,12 @@ function KPath(kseg::KSegment, n_points_first_segment::Integer = 100)
             n_v = round(Int, v_norm / dk, RoundNearestTiesUp)
             # ensure at least the two ending points are there, if the v_norm is too small
             n_v = max(n_v, 1)
-            x_v = collect(range(0, v_norm, n_v + 1))
-            dv = iszero(v_norm) ? v : v / v_norm
-
+            # Now operates with fractional coordinates, to avoid numerical
+            # issues by doing frac -> cart -> frac transformation
+            x_v = collect(range(0, 1, n_v + 1))
             # column vector * row vector = matrix
-            kpt_v = dv * x_v'
-            kpt_v .+= coords_cart[k1]
+            kpt_v = (kseg.coords[k2] - kseg.coords[k1]) * x_v'
+            kpt_v .+= kseg.coords[k1]
 
             if j == 1
                 push!(indices_seg, 1)
@@ -282,8 +286,6 @@ function KPath(kseg::KSegment, n_points_first_segment::Integer = 100)
     end
 
     points = reduce(vcat, kpaths)
-    # To fractional coordinates
-    points = cart_to_frac(kseg.recip_lattice, points)
     indices = reduce(vcat, indices)
     labels = reduce(vcat, labels)
     return KPath(kseg.recip_lattice, points, indices, labels)

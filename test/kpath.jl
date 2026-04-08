@@ -193,16 +193,15 @@ end
     @test all(isapprox.(KPathEnv.x, x; atol = 1.0e-5))
 end
 
-@testitem "KPathInterpolant from KPath" setup = [KPathEnv] begin
-    import Bravais, Brillouin
-
+@testitem "Base.collect(KPath)" setup = [KPathEnv] begin
     kseg = KSegment(KPathEnv.recip_lattice, KPathEnv.kpoint_path)
     kp = KPath(kseg, 5)
-    kpi = Brillouin.KPathInterpolant(kp)
+    @test kp.points == collect(kp)
 
-    @test all(isapprox.(kpi, kp.points; atol = 1.0e-5))
-    @test mat3(kpi.basis) == kp.recip_lattice
-    @test kpi.labels[1] == Dict(i => Symbol(l) for (i, l) in zip(kp.indices, kp.labels))
+    # The default 100 points/segment should return 511 kpoints as in
+    # `WannierDatasets/datasets/Si2/outputs/MDRS/Si2_band.kpt`
+    kp2 = KPath(kseg)
+    @test length(kp2) == 511
 end
 
 @testitem "isapprox for KSegment and KPath" begin
@@ -233,4 +232,16 @@ end
     kp2 = KPath(ks2, 10)
     @test isapprox(kp1, kp2; atol = 1e-6)
     @test !isapprox(kp1, kp2)
+end
+
+@testitem "KPathInterpolant from KPath" setup = [KPathEnv] begin
+    import Bravais, Brillouin
+
+    kseg = KSegment(KPathEnv.recip_lattice, KPathEnv.kpoint_path)
+    kp = KPath(kseg, 5)
+    kpi = Brillouin.KPathInterpolant(kp)
+
+    @test all(isapprox.(kpi, kp.points; atol = 1.0e-5))
+    @test mat3(kpi.basis) == kp.recip_lattice
+    @test kpi.labels[1] == Dict(i => Symbol(l) for (i, l) in zip(kp.indices, kp.labels))
 end
