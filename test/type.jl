@@ -20,6 +20,28 @@
     @test vec3(m1) == Vec3{Vec3{Int}}(m3[1], m3[2], m3[3])
 end
 
+@testitem "mvec3 mmat3" begin
+    v0 = [1, 2, 3]
+    v1 = MVec3{Int}(v0)
+
+    @test mvec3(v1) === v1
+    v2 = mvec3(v0)
+    @test (v2 isa MVec3) && (v2 == v1)
+
+    m0 = [1 2 3; 4 5 6; 7 8 9]
+    m1 = MMat3{Int}(m0)
+
+    @test mmat3(m1) === m1
+    m2 = mmat3(m0)
+    @test (m2 isa MMat3) && (m2 == m1)
+    # To Vector{Vector{Int}}
+    m3 = collect.(eachcol(m0))
+    m4 = mmat3(m3)
+    @test (m4 isa MMat3) && (m4 == m1)
+
+    @test mvec3(m1) == MVec3{MVec3{Int}}(m3[1], m3[2], m3[3])
+end
+
 @testitem "stringvec3" begin
     s = "Si"
     v = [1, 2, 3]

@@ -1,4 +1,4 @@
-export Vec3, vec3, Mat3, mat3, StringVec3, stringvec3
+export Vec3, vec3, Mat3, mat3, MVec3, mvec3, MMat3, mmat3, StringVec3, stringvec3
 
 """
 Length-3 vector type.
@@ -142,6 +142,129 @@ mat3(cols::AbstractVector{<:AbstractVector}) = Mat3(reduce(hcat, cols))
 
 # Each column of the matrix is a vector.
 vec3(A::AbstractMatrix) = Vec3(Vec3.(eachcol(A)))
+
+"""
+Mutable length-3 vector type.
+"""
+const MVec3{T} = MVector{3, T} where {T}
+
+"""
+    mvec3(v)
+    mvec3(x, y, z)
+    mvec3(A)
+
+Convert input to MVec3-compatible representation.
+
+# Examples
+```jldoctest mvec3; setup = :(using CrystalBase, StaticArrays)
+v = [1.0, 2.0, 3.0];
+mvec3(v)
+# output
+3-element MVector{3, Float64} with indices SOneTo(3):
+ 1.0
+ 2.0
+ 3.0
+```
+
+```jldoctest mvec3
+v = MVector(1.0, 2.0, 3.0);
+mvec3(v)
+# output
+3-element MVector{3, Float64} with indices SOneTo(3):
+ 1.0
+ 2.0
+ 3.0
+```
+
+```jldoctest mvec3
+mvec3(1.0, 2.0, 3.0)
+# output
+3-element MVector{3, Float64} with indices SOneTo(3):
+ 1.0
+ 2.0
+ 3.0
+```
+
+```jldoctest mvec3
+A = [1.0 2.0 3.0; 4.0 5.0 6.0; 7.0 8.0 9.0];
+mvec3(A)
+# output
+3-element MVector{3, MVector{3, Float64}} with indices SOneTo(3):
+ [1.0, 4.0, 7.0]
+ [2.0, 5.0, 8.0]
+ [3.0, 6.0, 9.0]
+```
+"""
+function mvec3 end
+
+mvec3(v::MVec3) = v
+mvec3(v::AbstractVector) = MVec3(v)
+mvec3(x, y, z) = MVec3(x, y, z)
+
+"""
+Mutable 3 x 3 matrix type.
+"""
+const MMat3{T} = MMatrix{3, 3, T, 9} where {T}
+
+"""
+    mmat3(A)
+    mmat3(v1, v2, v3)
+    mmat3(cols)
+
+Convert input to `MMat3`.
+
+# Examples
+```jldoctest mmat3; setup = :(using CrystalBase, StaticArrays)
+A = [1.0 2.0 3.0; 4.0 5.0 6.0; 7.0 8.0 9.0];
+mmat3(A)
+# output
+3×3 MMatrix{3, 3, Float64, 9} with indices SOneTo(3)×SOneTo(3):
+ 1.0  2.0  3.0
+ 4.0  5.0  6.0
+ 7.0  8.0  9.0
+```
+
+```jldoctest mmat3
+cols = SMatrix{3,3}(A);
+mmat3(cols)
+# output
+3×3 MMatrix{3, 3, Float64, 9} with indices SOneTo(3)×SOneTo(3):
+ 1.0  2.0  3.0
+ 4.0  5.0  6.0
+ 7.0  8.0  9.0
+```
+
+```jldoctest mmat3
+v1, v2, v3 = [1.0, 4.0, 7.0], [2.0, 5.0, 8.0], [3.0, 6.0, 9.0];
+mmat3(v1, v2, v3)
+# output
+3×3 MMatrix{3, 3, Float64, 9} with indices SOneTo(3)×SOneTo(3):
+ 1.0  2.0  3.0
+ 4.0  5.0  6.0
+ 7.0  8.0  9.0
+```
+
+```jldoctest mmat3
+cols = [v1, v2, v3];
+mmat3(cols)
+# output
+3×3 MMatrix{3, 3, Float64, 9} with indices SOneTo(3)×SOneTo(3):
+ 1.0  2.0  3.0
+ 4.0  5.0  6.0
+ 7.0  8.0  9.0
+```
+"""
+function mmat3 end
+
+mmat3(A::MMat3) = A
+mmat3(A::AbstractMatrix) = MMat3(A)
+mmat3(v1, v2, v3) = mmat3([v1, v2, v3])
+
+# Each vector is a column of the matrix.
+mmat3(cols::AbstractVector{<:AbstractVector}) = MMat3(reduce(hcat, cols))
+
+# Each column of the matrix is a vector.
+mvec3(A::AbstractMatrix) = MVec3(MVec3.(eachcol(A)))
 
 """
 Pair type associating a `String` with a `Vec3`.
