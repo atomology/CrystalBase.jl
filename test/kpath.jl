@@ -189,6 +189,30 @@ end
     @test kp.indices == KPathEnv.indices
 end
 
+@testitem "KPath multi-segment indices" begin
+    using LinearAlgebra
+    using OrderedCollections: OrderedDict
+
+    lattice = Matrix{Float64}(I, 3, 3)
+    recip_lattice = reciprocal_lattice(lattice)
+
+    # Two disconnected segments: A->B and C->D
+    segments = [["A", "B"], ["C", "D"]]
+    coords = OrderedDict(
+        "A" => [0.0, 0.0, 0.0],
+        "B" => [1.0, 0.0, 0.0],
+        "C" => [0.0, 0.0, 0.0],
+        "D" => [0.0, 2.0, 0.0],
+    )
+
+    kseg = KSegment(recip_lattice, segments, coords)
+    kp = KPath(kseg, 5)
+
+    @test kp.labels == ["A", "B", "C", "D"]
+    @test kp.indices == [1, 6, 7, 17]
+    @test length(kp) == 17
+end
+
 @testitem "linear_path" setup = [KPathEnv] begin
     kseg = KSegment(KPathEnv.recip_lattice, KPathEnv.kpoint_path)
     kp = KPath(kseg, 5)

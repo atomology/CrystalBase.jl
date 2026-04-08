@@ -280,7 +280,7 @@ function KPath(kseg::KSegment, n_points_first_segment::Integer = 100)
         end
 
         push!(kpaths, kpoints_seg)
-        push!(indices, indices_seg)
+        push!(indices, indices_seg .+ sum(length.(kpaths[1:end-1])))
         push!(labels, labels_seg)
     end
 
