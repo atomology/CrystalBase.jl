@@ -35,9 +35,8 @@ function KSegment(recip_lattice::AbstractMatrix, segments::AbstractVector, coord
     )
 end
 
-function reciprocal_lattice(kseg::KSegment)
-    return kseg.recip_lattice
-end
+reciprocal_lattice(kseg::KSegment) = kseg.recip_lattice
+real_lattice(kseg::KSegment) = real_lattice(kseg.recip_lattice)
 
 function Base.show(io::IO, kseg::KSegment)
     segs = [join(s, " → ") for s in kseg.segments]

@@ -62,9 +62,8 @@ function Base.show(io::IO, ::MIME"text/plain", kpath::KPath{T}) where {T}
     return
 end
 
-function reciprocal_lattice(kpath::KPath)
-    return kpath.recip_lattice
-end
+reciprocal_lattice(kpath::KPath) = kpath.recip_lattice
+real_lattice(kpath::KPath) = real_lattice(kpath.recip_lattice)
 
 """
     $(SIGNATURES)

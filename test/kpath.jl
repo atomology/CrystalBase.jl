@@ -58,7 +58,8 @@ end
     atom_symbols = ["Si", "Si"]
     kseg = KSegment(lattice, atom_positions, atom_symbols)
 
-    @test kseg.recip_lattice ≈ reciprocal_lattice(lattice)
+    @test reciprocal_lattice(kseg) ≈ reciprocal_lattice(lattice)
+    @test real_lattice(kseg) ≈ lattice
     ref_segments = [
         ["Γ", "X", "U"],
         ["K", "Γ", "L", "W", "X"],
@@ -181,6 +182,8 @@ end
     kseg = KSegment(KPathEnv.recip_lattice, KPathEnv.kpoint_path)
     kp = KPath(kseg, 5)
 
+    @test reciprocal_lattice(kp) ≈ KPathEnv.recip_lattice
+    @test real_lattice(kp) ≈ KPathEnv.lattice
     @test all(isapprox.(kp.points, KPathEnv.kpoints; atol = 1.0e-5))
     @test kp.labels == KPathEnv.labels
     @test kp.indices == KPathEnv.indices
