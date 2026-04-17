@@ -45,7 +45,7 @@ end
 
 function Base.show(io::IO, kpath::KPath)
     n_kpts = length(kpath.points)
-    return print(io, "KPath($(n_kpts) kpoints, [$(join(labels, " → "))])")
+    return print(io, "KPath($(n_kpts) kpoints, [$(join(kpath.labels, " → "))])")
 end
 
 function Base.show(io::IO, ::MIME"text/plain", kpath::KPath{T}) where {T}
