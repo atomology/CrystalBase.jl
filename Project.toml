@@ -20,15 +20,15 @@ Brillouin = "23470ee3-d0df-4052-8b1a-8cbd6363e7f0"
 Spglib = "f761d5c5-86db-4880-b97f-9680a7cccfb5"
 
 [extensions]
-CrystalBaseBrillouinExt = ["Brillouin"]
 CrystalBaseBravaisBrillouinExt = ["Bravais", "Brillouin"]
+CrystalBaseBrillouinExt = ["Brillouin"]
 CrystalBaseSpglibBrillouinExt = ["Spglib", "Brillouin"]
 
 [compat]
 Bravais = "0.2"
 Brillouin = "0.5.8"
 DocStringExtensions = "0.9"
-OrderedCollections = "1.8"
+OrderedCollections = "1.8, 2"
 PeriodicTable = "1.1"
 PrecompileTools = "1"
 Spglib = "0.6, 0.7, 0.8, 0.9, 1"
