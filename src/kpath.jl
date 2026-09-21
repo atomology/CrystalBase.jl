@@ -403,26 +403,35 @@ function _merged_ticks(kpath::KPath)
 end
 
 """
-    $(SIGNATURES)
+    tick_indices(kpath; merge = true)
 
-Indices into [`kpoints`](@ref) of the labeled vertices. Two labeled points
-straddling a discontinuity share one tick, labeled `A|B`.
+Indices into [`kpoints`](@ref) of the labeled vertices.
+
+With `merge = true` two labeled points straddling a discontinuity share one
+tick, labeled `A|B`, as a band plot draws them. With `merge = false` every
+labeled vertex is its own tick, the layout of wannier90 `labelinfo.dat`.
 """
-tick_indices(kpath::KPath) = _merged_ticks(kpath)[1]
+tick_indices(kpath::KPath; merge::Bool = true) = _ticks(kpath, merge)[1]
 
 """
-    $(SIGNATURES)
+    tick_labels(kpath; merge = true)
 
 Labels of the ticks, aligned with [`tick_indices`](@ref).
 """
-tick_labels(kpath::KPath) = _merged_ticks(kpath)[2]
+tick_labels(kpath::KPath; merge::Bool = true) = _ticks(kpath, merge)[2]
+
+function _ticks(kpath::KPath, merge::Bool)
+    merge && return _merged_ticks(kpath)
+    ticks = _sample(kpath)[2]
+    return first.(ticks), last.(ticks)
+end
 
 """
-    $(SIGNATURES)
+    tick_positions(kpath; merge = true)
 
 Position of each tick on [`axis`](@ref).
 """
-tick_positions(kpath::KPath) = axis(kpath)[tick_indices(kpath)]
+tick_positions(kpath::KPath; merge::Bool = true) = axis(kpath)[tick_indices(kpath; merge)]
 
 # ---------------------------------------------------------------------------
 # Labels
