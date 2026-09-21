@@ -1,306 +1,581 @@
-export KPath, linear_path
+export Subpath, KPath
+export kpoints, kpoints_cart, axis, tick_indices, tick_labels, tick_positions, n_kpoints
+export resample, unicode_kpoint_labels, unicode_kpoint_labels!
+
+# A k-point path is stored as its *route*: subpaths of vertices with
+# per-segment division counts. The dense k-point list, the plot axis and the
+# high-symmetry ticks are derived on access, never stored. Connectivity is
+# structural: vertices inside one `Subpath` are connected, consecutive
+# subpaths are separated by a discontinuity (the `|` of a band plot).
 
 """
     $(TYPEDEF)
 
-Kpoint path in the Brillouin zone.
+One connected piece of a [`KPath`](@ref): a polyline of vertices.
 
-Storing explicitly the kpoint coordinates along the path, as well as the indices
-and labels of high-symmetry kpoints.
+Consecutive vertices define segments; `divisions[j]` is the number of
+intervals the `j`-th segment is split into when sampled. A verbatim list of
+k-points is a subpath whose divisions are all `1`.
 
-See also [`KSegment`](@ref) for an alternative representation of kpoint path,
-which only stores the segments of high-symmetry kpoint path but not the explicit
-kpoint coordinates along the path.
+# Fields
+$(FIELDS)
+"""
+struct Subpath{T <: Real}
+    """fractional k-point coordinates of the vertices, length `m ≥ 1`"""
+    vertices::Vector{Vec3{T}}
+
+    """one label per vertex; `""` marks an unlabeled vertex (no plot tick)"""
+    labels::Vector{String}
+
+    """intervals per segment, length `m - 1`, each `≥ 1`"""
+    divisions::Vector{Int}
+
+    function Subpath{T}(
+            vertices::Vector{Vec3{T}}, labels::Vector{String}, divisions::Vector{Int}
+        ) where {T <: Real}
+        m = length(vertices)
+        m >= 1 || throw(ArgumentError("a Subpath needs at least one vertex"))
+        length(labels) == m ||
+            throw(DimensionMismatch("labels has $(length(labels)) entries, expected $m"))
+        length(divisions) == m - 1 ||
+            throw(DimensionMismatch("divisions has $(length(divisions)) entries, expected $(m - 1)"))
+        all(>=(1), divisions) || throw(ArgumentError("every division count must be ≥ 1"))
+        return new{T}(vertices, labels, divisions)
+    end
+end
+
+"""
+    Subpath(vertices, labels = fill("", length(vertices)); divisions = 1)
+
+Construct a [`Subpath`](@ref). `divisions` is an integer broadcast to every
+segment, or one integer per segment.
+
+# Examples
+```jldoctest subpath; setup = :(using CrystalBase)
+sp = Subpath([[0.0, 0.0, 0.0], [0.5, 0.0, 0.0], [0.5, 0.5, 0.0]], ["Γ", "X", "M"]; divisions = [4, 2]);
+sp.divisions
+# output
+2-element Vector{Int64}:
+ 4
+ 2
+```
+"""
+function Subpath(
+        vertices::AbstractVector, labels::AbstractVector = fill("", length(vertices));
+        divisions::Union{Integer, AbstractVector{<:Integer}} = 1,
+    )
+    T = _vertex_eltype(vertices)
+    return Subpath{T}(
+        Vector{Vec3{T}}(vec3.(vertices)),
+        String.(labels),
+        _divisions(divisions, length(vertices)),
+    )
+end
+
+_divisions(d::Integer, m::Integer) = fill(Int(d), max(m - 1, 0))
+_divisions(d::AbstractVector{<:Integer}, ::Integer) = Vector{Int}(d)
+
+function _vertex_eltype(vertices::AbstractVector)
+    isempty(vertices) && return Float64
+    return float(promote_type(map(eltype, vertices)...))
+end
+
+n_segments(sp::Subpath) = length(sp.divisions)
+n_kpoints(sp::Subpath) = 1 + sum(sp.divisions; init = 0)
+
+"""
+    $(TYPEDEF)
+
+A k-point path in the Brillouin zone, stored as a route of [`Subpath`](@ref)s.
+
+Vertices within a subpath are connected; consecutive subpaths are separated
+by a discontinuity. The dense k-point list ([`kpoints`](@ref)), the
+cumulative plot axis ([`axis`](@ref)) and the high-symmetry ticks
+([`tick_indices`](@ref), [`tick_labels`](@ref)) are derived on access.
 
 # Fields
 $(FIELDS)
 """
 struct KPath{T <: Real}
-    "Reciprocal lattice vectors (in units of 1/L, where L is unit of length)"
+    """reciprocal lattice, 3 × 3, each column is a reciprocal lattice vector (Å⁻¹)"""
     recip_lattice::Mat3{T}
 
-    "Fractional kpoint coordinates along the kpath"
-    points::Vector{Vec3{T}}
-
-    "Indices of high-symmetry kpoints along the kpath"
-    indices::Vector{Int}
-
-    "Labels of high-symmetry kpoints"
-    labels::Vector{String}
+    """connected pieces of the path"""
+    subpaths::Vector{Subpath{T}}
 end
 
-function KPath(recip_lattice::AbstractMatrix, points::AbstractVector, indices::AbstractVector, labels::AbstractVector)
+"""
+    KPath(recip_lattice, subpaths)
+
+Construct a [`KPath`](@ref) from a vector of [`Subpath`](@ref)s.
+"""
+function KPath(recip_lattice::AbstractMatrix, subpaths::AbstractVector{<:Subpath})
     rlatt = mat3(recip_lattice)
-    T = eltype(rlatt)
-    return KPath{T}(rlatt, Vector{Vec3{T}}(points), Vector{Int}(indices), string.(labels))
+    T = float(promote_type(eltype(rlatt), map(sp -> eltype(eltype(sp.vertices)), subpaths)...))
+    return KPath{T}(Mat3{T}(rlatt), [_convert(Subpath{T}, sp) for sp in subpaths])
 end
 
-function Base.length(kpath::KPath)
-    return length(kpath.points)
-end
-
-function Base.collect(kpath::KPath)
-    return copy(kpath.points)
-end
-
-function Base.show(io::IO, kpath::KPath)
-    n_kpts = length(kpath.points)
-    return print(io, "KPath($(n_kpts) kpoints, [$(join(kpath.labels, " → "))])")
-end
-
-function Base.show(io::IO, ::MIME"text/plain", kpath::KPath{T}) where {T}
-    n_kpts = length(kpath.points)
-    println(io, "KPath{$T} with $(n_kpts) k-points and $(length(kpath.labels)) high-symmetry labels:")
-    println(io, "  Path: $(join(kpath.labels, " → "))")
-    println(io, "  High-symmetry k-points:")
-    for (i, (idx, lab)) in enumerate(zip(kpath.indices, kpath.labels))
-        k = kpath.points[idx]
-        print(io, "    $(lpad(idx, ndigits(n_kpts))): $(rpad(lab, maximum(length, kpath.labels)))  ")
-        print(io, "($(join(round.(k, sigdigits = 4), ", ")))")
-        (i < length(kpath.indices)) && println(io)
-    end
-    return
-end
+_convert(::Type{Subpath{T}}, sp::Subpath{T}) where {T} = sp
+_convert(::Type{Subpath{T}}, sp::Subpath) where {T} =
+    Subpath{T}(Vector{Vec3{T}}(sp.vertices), sp.labels, sp.divisions)
 
 reciprocal_lattice(kpath::KPath) = kpath.recip_lattice
 real_lattice(kpath::KPath) = real_lattice(kpath.recip_lattice)
 
-"""
-    $(SIGNATURES)
+# ---------------------------------------------------------------------------
+# Constructors from explicit k-point lists (verbatim)
+# ---------------------------------------------------------------------------
 
-Convert labels of high-symmetry kpoints in `kpath` to unicode string.
 """
-function unicode_kpoint_labels!(kpath::KPath)
-    kpath.labels = unicode_kpoint_labels(kpath.labels)
-    return nothing
+    KPath(recip_lattice, kpoints; labels = fill("", length(kpoints)), break_tol = 3.0)
+
+Wrap an explicit list of fractional `kpoints` verbatim: every point becomes a
+vertex, every segment has one division, so [`kpoints`](@ref) round-trips
+the input exactly.
+
+`labels` gives one label per k-point (`""` for none). Discontinuities are
+inferred from the sampling: a step longer than `break_tol` times the median
+step starts a new [`Subpath`](@ref). Pass `break_tol = 0` to disable the
+heuristic and keep one connected subpath.
+"""
+function KPath(
+        recip_lattice::AbstractMatrix, kpoints::AbstractVector{<:AbstractVector{<:Real}};
+        labels::AbstractVector = fill("", length(kpoints)), break_tol::Real = 3.0,
+    )
+    n = length(kpoints)
+    n >= 1 || throw(ArgumentError("kpoints must not be empty"))
+    length(labels) == n ||
+        throw(DimensionMismatch("labels has $(length(labels)) entries, expected $n"))
+    starts = _geometric_breaks(recip_lattice, kpoints, break_tol)
+    return _verbatim(recip_lattice, kpoints, labels, starts)
 end
 
 """
-    $(SIGNATURES)
+    KPath(recip_lattice, kpoints, indices, labels; break_tol = 0.0)
 
-Group consecutive high-symmetry points.
+Wrap an explicit list of fractional `kpoints` verbatim, labeling
+`kpoints[indices[i]]` with `labels[i]`. This is the layout of wannier90
+`band.kpt` and `band.labelinfo.dat` files.
 
-If two high-symmetry kpoints are neighbors, group them together.
+Two labeled points at consecutive indices mark a discontinuity, following
+the wannier90 convention that a shared corner is written once. `break_tol`
+additionally enables the geometric heuristic of the `labels`-keyword method.
+"""
+function KPath(
+        recip_lattice::AbstractMatrix,
+        kpoints::AbstractVector{<:AbstractVector{<:Real}},
+        indices::AbstractVector{<:Integer},
+        labels::AbstractVector;
+        break_tol::Real = 0.0,
+    )
+    n = length(kpoints)
+    length(indices) == length(labels) ||
+        throw(DimensionMismatch("indices and labels must have the same length"))
+    all(i -> 1 <= i <= n, indices) || throw(ArgumentError("indices out of range 1:$n"))
+    full_labels = fill("", n)
+    for (i, l) in zip(indices, labels)
+        full_labels[i] = string(l)
+    end
+    starts = Set(_geometric_breaks(recip_lattice, kpoints, break_tol))
+    for (a, b) in zip(indices[1:(end - 1)], indices[2:end])
+        b == a + 1 && push!(starts, b)
+    end
+    return _verbatim(recip_lattice, kpoints, full_labels, sort!(collect(starts)))
+end
 
-# Arguments
-- `indices`: indices of high-symmetry kpoints, start from 1
+# indices (into `kpoints`) that start a new subpath, always including 1
+function _geometric_breaks(recip_lattice, kpoints, break_tol)
+    starts = [1]
+    (break_tol > 0 && length(kpoints) > 2) || return starts
+    cart = frac_to_cart(recip_lattice, kpoints)
+    steps = norm.(diff(cart))
+    moved = filter(>(0), steps)
+    isempty(moved) && return starts
+    typical = _median(moved)
+    for (i, s) in enumerate(steps)
+        s > break_tol * typical && push!(starts, i + 1)
+    end
+    return starts
+end
 
-# Return
-- `groups`: a vector of vectors, if the inner vector contains more than 1 index,
-    it means those indices are neighbors and are grouped together.
+function _median(x::AbstractVector)
+    s = sort(x)
+    n = length(s)
+    return isodd(n) ? s[(n + 1) ÷ 2] : (s[n ÷ 2] + s[n ÷ 2 + 1]) / 2
+end
 
-# Example
-```jldoctest group_nearby_indices; setup = :(using CrystalBase)
-CrystalBase.group_nearby_indices([1, 2, 4, 5, 6])
-# output
-2-element Vector{Vector{Int64}}:
- [1, 2]
- [4, 5, 6]
+function _verbatim(recip_lattice, kpoints, labels, starts::AbstractVector{<:Integer})
+    n = length(kpoints)
+    bounds = vcat(starts, n + 1)
+    subpaths = map(zip(bounds[1:(end - 1)], bounds[2:end])) do (a, b)
+        Subpath(kpoints[a:(b - 1)], labels[a:(b - 1)]; divisions = 1)
+    end
+    return KPath(recip_lattice, subpaths)
+end
+
+# ---------------------------------------------------------------------------
+# Constructor from wannier90 `kpoint_path` block
+# ---------------------------------------------------------------------------
+
+"""
+    KPath(recip_lattice, kpoint_path; n_points_first_segment = 100)
+
+Construct a route from a wannier90-style `kpoint_path`: a vector of
+two-point segments, each a pair of `label => fractional coordinate`, as
+returned for the `kpoint_path` block by `WannierIO.read_win`:
+
+```julia
+kpoint_path = [
+    [:Γ => [0.0, 0.0, 0.0], :M => [0.5, 0.5, 0.0]],
+    [:M => [0.5, 0.5, 0.0], :R => [0.5, 0.5, 0.5]],
+]
 ```
-"""
-function group_nearby_indices(indices::AbstractVector{T}) where {T <: Integer}
-    groups = Vector{Vector{T}}()
-    isempty(indices) && return groups
-    push!(groups, [indices[1]])
 
-    counter = 2
-    for i in eachindex(indices)[2:end]
-        if indices[i] == indices[i - 1] + 1
-            push!(groups[counter - 1], indices[i])
+Consecutive segments are joined into one [`Subpath`](@ref) when the end of one
+and the start of the next have the same label and coordinate; otherwise a
+discontinuity is inserted. Divisions follow wannier90: the first segment gets
+`n_points_first_segment` intervals and every other segment the same spacing
+(see [`resample`](@ref)), so the result reproduces `bands_num_points`.
+"""
+function KPath(
+        recip_lattice::AbstractMatrix, kpoint_path::AbstractVector{<:AbstractVector{<:Pair}};
+        n_points_first_segment::Integer = 100,
+    )
+    isempty(kpoint_path) && throw(ArgumentError("kpoint_path must not be empty"))
+    T = float(eltype(mat3(recip_lattice)))
+    vertices = Vector{Vector{Vec3{T}}}()
+    labels = Vector{Vector{String}}()
+    for segment in kpoint_path
+        length(segment) == 2 || throw(ArgumentError("each kpoint_path entry needs exactly 2 kpoints"))
+        (l1, k1), (l2, k2) = segment
+        l1, l2 = string(l1), string(l2)
+        v1, v2 = Vec3{T}(k1), Vec3{T}(k2)
+        if !isempty(vertices) && labels[end][end] == l1 && isapprox(vertices[end][end], v1; atol = 1.0e-6)
+            push!(vertices[end], v2)
+            push!(labels[end], l2)
         else
-            push!(groups, [indices[i]])
-            counter += 1
+            push!(vertices, [v1, v2])
+            push!(labels, [l1, l2])
         end
     end
+    subpaths = [Subpath(v, l; divisions = 1) for (v, l) in zip(vertices, labels)]
+    return resample(KPath(recip_lattice, subpaths); n_points_first_segment)
+end
 
-    return groups
+"""
+    resample(kpath; n_points_first_segment)
+    resample(kpath; density)
+
+Return a [`KPath`](@ref) with the same vertices and labels but new divisions.
+
+- `n_points_first_segment`: wannier90 rule. The first segment of the first
+  subpath gets this many intervals; every other segment gets the same
+  spacing, rounded half up, at least 1.
+- `density`: intervals per unit reciprocal length (Å); each segment gets
+  `round(length · density)`, at least 1.
+"""
+function resample(
+        kpath::KPath;
+        n_points_first_segment::Union{Nothing, Integer} = nothing,
+        density::Union{Nothing, Real} = nothing,
+    )
+    if !isnothing(n_points_first_segment) && isnothing(density)
+        first_sp = first(kpath.subpaths)
+        n_segments(first_sp) >= 1 ||
+            throw(ArgumentError("the first subpath needs at least one segment"))
+        first_length = _segment_lengths(kpath.recip_lattice, first_sp)[1]
+        dk = first_length / n_points_first_segment
+        return _resample(kpath, len -> len / dk)
+    elseif isnothing(n_points_first_segment) && !isnothing(density)
+        return _resample(kpath, len -> len * density)
+    end
+    throw(ArgumentError("pass exactly one of n_points_first_segment or density"))
+end
+
+function _resample(kpath::KPath{T}, intervals) where {T}
+    subpaths = map(kpath.subpaths) do sp
+        lengths = _segment_lengths(kpath.recip_lattice, sp)
+        # Round half up to reproduce wannier90; Julia rounds half to even by default.
+        divisions = [max(round(Int, intervals(len), RoundNearestTiesUp), 1) for len in lengths]
+        Subpath{T}(sp.vertices, sp.labels, divisions)
+    end
+    return KPath{T}(kpath.recip_lattice, subpaths)
+end
+
+function _segment_lengths(recip_lattice, sp::Subpath)
+    cart = frac_to_cart(recip_lattice, sp.vertices)
+    return norm.(diff(cart))
+end
+
+# ---------------------------------------------------------------------------
+# Derived views
+# ---------------------------------------------------------------------------
+
+# Dense points of one subpath, plus (local index, label) ticks.
+function _sample(sp::Subpath{T}) where {T}
+    points = Vector{Vec3{T}}(undef, n_kpoints(sp))
+    ticks = Tuple{Int, String}[]
+    points[1] = sp.vertices[1]
+    isempty(sp.labels[1]) || push!(ticks, (1, sp.labels[1]))
+    n = 1
+    for j in 1:n_segments(sp)
+        a, b = sp.vertices[j], sp.vertices[j + 1]
+        d = sp.divisions[j]
+        # Interpolate in fractional coordinates so vertices are hit exactly.
+        for t in range(0, 1, d + 1)[2:end]
+            n += 1
+            points[n] = a + (b - a) * t
+        end
+        isempty(sp.labels[j + 1]) || push!(ticks, (n, sp.labels[j + 1]))
+    end
+    return points, ticks
+end
+
+# Dense points of the whole path, global (index, label) ticks and the set of
+# global indices that start a new subpath (excluding the first).
+function _sample(kpath::KPath{T}) where {T}
+    points = Vec3{T}[]
+    ticks = Tuple{Int, String}[]
+    breaks = Set{Int}()
+    for (i, sp) in enumerate(kpath.subpaths)
+        offset = length(points)
+        i > 1 && push!(breaks, offset + 1)
+        sp_points, sp_ticks = _sample(sp)
+        append!(points, sp_points)
+        append!(ticks, [(idx + offset, l) for (idx, l) in sp_ticks])
+    end
+    return points, ticks, breaks
 end
 
 """
     $(SIGNATURES)
 
-Merge consecutive high-symmetry points.
-
-If two high-symmetry kpoints are neighbors, merge them into one,
-with label `X|Y`, where `X` and `Y` are the original labels of
-the two kpoints, respectively.
-
-# Arguments
-- `indices`: indices of high-symmetry kpoints, start from 1
-- `labels`: labels of high-symmetry kpoints
-
-# Return
-- `tick_indices`: indices of high-symmetry kpoints after merging
-- `tick_labels`: labels of high-symmetry kpoints after merging
+Number of k-points along the path.
 """
-function merge_nearby_labels(
-        indices::AbstractVector{<:Integer}, labels::AbstractVector{<:AbstractString}
-    )
-    grps = group_nearby_indices(indices)
-    tick_labs = map(grps) do idxs
-        js = map(idxs) do i
-            findfirst(==(i), indices)
-        end
-        join(labels[js], "|")
-    end
-    tick_idxs = isempty(grps) ? grps : first.(grps)
-    return tick_idxs, tick_labs
-end
+n_kpoints(kpath::KPath) = sum(n_kpoints, kpath.subpaths; init = 0)
 
 """
     $(SIGNATURES)
 
-Get a 1D vector of cumulative distance along the kpath.
+Dense fractional k-points along the path, one segment sampled into
+`divisions` intervals.
 """
-function linear_path(
-        kpoints_cart::AbstractVector{<:AbstractVector{<:Real}},
-        indices::AbstractVector{<:Integer} = [],
-    )
-    grps = group_nearby_indices(indices)
-    x = [0.0; accumulate(+, norm.(diff(kpoints_cart)))]
+kpoints(kpath::KPath) = _sample(kpath)[1]
 
-    for idxs in grps
-        (length(idxs) > 1) || continue
-        for j in idxs[2:end]
-            δ = x[j] - x[j - 1]
-            x[j:end] .-= δ
-        end
+"""
+    $(SIGNATURES)
+
+Dense k-points along the path in Cartesian coordinates (Å⁻¹).
+"""
+kpoints_cart(kpath::KPath) = frac_to_cart(kpath.recip_lattice, kpoints(kpath))
+
+"""
+    $(SIGNATURES)
+
+Cumulative Cartesian distance (Å⁻¹) along the path, one value per k-point,
+held flat across discontinuities between subpaths. This is the x axis of a
+band-structure plot.
+"""
+function axis(kpath::KPath{T}) where {T}
+    points, _, breaks = _sample(kpath)
+    cart = frac_to_cart(kpath.recip_lattice, points)
+    x = zeros(T, length(cart))
+    for i in 2:length(cart)
+        x[i] = x[i - 1] + (i in breaks ? zero(T) : norm(cart[i] - cart[i - 1]))
     end
-
     return x
 end
 
-function linear_path(kpoints_cart, indices, labels)
-    x = linear_path(kpoints_cart, indices)
-    tick_idxs, tick_labs = merge_nearby_labels(indices, labels)
-    return x, tick_idxs, tick_labs
-end
-
-"""
-    $(SIGNATURES)
-
-Get a 1D vector of cumulative distance along the kpath, and the corresponding
-tick indices and labels for high-symmetry kpoints.
-
-# Return
-- `x`: 1D vector of cumulative distance along the kpath
-- `tick_indices`: indices of high-symmetry kpoints after merging
-- `tick_labels`: labels of high-symmetry kpoints after merging
-"""
-function linear_path(kpath::KPath)
-    kpts_cart = frac_to_cart(kpath.recip_lattice, kpath.points)
-    return linear_path(kpts_cart, kpath.indices, kpath.labels)
-end
-
-"""
-    $(SIGNATURES)
-
-Generate a `KPath` containing kpoint coordinates that are exactly
-the same as wannier90.
-
-The kpoints are generated by the following criteria:
-- the kpath spacing of remaining segments are kept the same as the first segment
-- merge same high-symmetry labels at the corner between two segments; keep both
-    labels if the two labels (ending of the 1st segment and starting point of the
-    2nd segment) are different
-
-# Arguments
-- `kseg`: a `KSegment`
-- `n_points_first_segment`: number of kpoints in the first segment, remaining
-    segments will have the same spacing as the 1st segment. The default value
-    is 100, which is the same as wannier90 default value of `bands_num_points`.
-
-!!! note
-
-    This reproduce exactly the wannier90 behavior, if
-    - the `kseg` is generated from the `kpoint_path` obtained by
-            `WannierIO.read_win` which parses the `kpoint_path` block of `win` file,
-    - the `n_points` is the same as wannier90 `win` file input parameter `bands_num_points`,
-        which again can be obtained by `WannierIO.read_win`.
-"""
-function KPath(kseg::KSegment, n_points_first_segment::Integer = 100)
-    # Cartesian
-    coords_cart = OrderedDict(k => frac_to_cart(kseg.recip_lattice, v) for (k, v) in kseg.coords)
-
-    # kpath spacing from first two kpoints
-    isempty(kseg.segments) && error("kseg should have at least one segment")
-    (length(kseg.segments[1]) < 2) && error("the first segment should have at least two kpoints")
-    k1, k2 = kseg.segments[1][1:2]
-    v = coords_cart[k2] - coords_cart[k1]
-    v_norm = norm(v)
-    dk = v_norm / n_points_first_segment
-
-    # kpoints along each segment
-    kpaths = Vector{Vector{Vec3{Float64}}}()
-    # symmetry points along each segment
-    indices = Vector{Vector{Int}}()
-    labels = Vector{Vector{String}}()
-
-    for seg in kseg.segments
-        kpoints_seg = Vector{Vec3{Float64}}()
-        indices_seg = Vector{Int}()
-        labels_seg = Vector{String}()
-
-        n_seg = length(seg) - 1
-        n_x_seg = 0
-        for j in 1:n_seg
-            k1 = seg[j]
-            k2 = seg[j + 1]
-
-            # One vector in each segment, from k1 to k2
-            v = coords_cart[k2] - coords_cart[k1]
-            v_norm = norm(v)
-
-            # By default julia rounds to even when the value is exactly x.5,
-            # but I want to round up to ensure the same behavior as wannier90.
-            # See round(Int, 1.5) and round(Int, 2.5) in julia.
-            n_v = round(Int, v_norm / dk, RoundNearestTiesUp)
-            # ensure at least the two ending points are there, if the v_norm is too small
-            n_v = max(n_v, 1)
-            # Now operates with fractional coordinates, to avoid numerical
-            # issues by doing frac -> cart -> frac transformation
-            x_v = collect(range(0, 1, n_v + 1))
-            # column vector * row vector = matrix
-            kpt_v = (kseg.coords[k2] - kseg.coords[k1]) * x_v'
-            kpt_v .+= kseg.coords[k1]
-
-            if j == 1
-                push!(indices_seg, 1)
-                push!(labels_seg, k1)
-            else
-                # remove repeated points
-                popfirst!(x_v)
-                kpt_v = kpt_v[:, 2:end]
-            end
-            n_x_seg += length(x_v)
-            push!(indices_seg, n_x_seg)
-            push!(labels_seg, k2)
-
-            append!(kpoints_seg, collect(eachcol(kpt_v)))
+# Ticks with labels straddling a break merged into "A|B".
+function _merged_ticks(kpath::KPath)
+    _, ticks, breaks = _sample(kpath)
+    indices = Int[]
+    labels = String[]
+    for (idx, label) in ticks
+        if !isempty(indices) && idx == indices[end] + 1 && idx in breaks
+            labels[end] = labels[end] * "|" * label
+        else
+            push!(indices, idx)
+            push!(labels, label)
         end
-
-        push!(kpaths, kpoints_seg)
-        push!(indices, indices_seg .+ sum(length.(kpaths[1:end-1])))
-        push!(labels, labels_seg)
     end
-
-    points = reduce(vcat, kpaths)
-    indices = reduce(vcat, indices)
-    labels = reduce(vcat, labels)
-    return KPath(kseg.recip_lattice, points, indices, labels)
+    return indices, labels
 end
+
+"""
+    $(SIGNATURES)
+
+Indices into [`kpoints`](@ref) of the labeled vertices. Two labeled points
+straddling a discontinuity share one tick, labeled `A|B`.
+"""
+tick_indices(kpath::KPath) = _merged_ticks(kpath)[1]
+
+"""
+    $(SIGNATURES)
+
+Labels of the ticks, aligned with [`tick_indices`](@ref).
+"""
+tick_labels(kpath::KPath) = _merged_ticks(kpath)[2]
+
+"""
+    $(SIGNATURES)
+
+Position of each tick on [`axis`](@ref).
+"""
+tick_positions(kpath::KPath) = axis(kpath)[tick_indices(kpath)]
+
+# ---------------------------------------------------------------------------
+# Labels
+# ---------------------------------------------------------------------------
+
+const _UNICODE_LABELS = Dict(
+    "GAMMA" => "Γ",
+    "DELTA" => "Δ",
+    "LAMBDA" => "Λ",
+    "SIGMA" => "Σ",
+    "0" => "₀",
+    "1" => "₁",
+    "2" => "₂",
+    "3" => "₃",
+    "4" => "₄",
+    "5" => "₅",
+    "6" => "₆",
+    "7" => "₇",
+    "8" => "₈",
+    "9" => "₉",
+)
+
+"""
+    unicode_kpoint_labels(label)
+    unicode_kpoint_labels(labels)
+    unicode_kpoint_labels(kpath)
+
+Convert high-symmetry k-point labels to Unicode: `GAMMA` → `Γ`, and a
+`_n` suffix to a subscript. For a [`KPath`](@ref) a new path is returned;
+see [`unicode_kpoint_labels!`](@ref) to convert in place.
+
+# Examples
+```jldoctest unicode_kpoint_labels; setup = :(using CrystalBase)
+unicode_kpoint_labels(["GAMMA", "DELTA_0", "LAMBDA_1", "SIGMA_2", "X"])
+# output
+5-element Vector{String}:
+ "Γ"
+ "Δ₀"
+ "Λ₁"
+ "Σ₂"
+ "X"
+```
+"""
+function unicode_kpoint_labels(label::AbstractString)
+    if occursin("_", label)
+        base, sub = split(label, "_"; limit = 2)
+        return get(_UNICODE_LABELS, base, base) * get(_UNICODE_LABELS, sub, sub)
+    end
+    return get(_UNICODE_LABELS, label, String(label))
+end
+
+unicode_kpoint_labels(labels::AbstractVector{<:AbstractString}) = map(unicode_kpoint_labels, labels)
+
+function unicode_kpoint_labels(kpath::KPath{T}) where {T}
+    subpaths = [
+        Subpath{T}(sp.vertices, unicode_kpoint_labels(sp.labels), sp.divisions)
+            for sp in kpath.subpaths
+    ]
+    return KPath{T}(kpath.recip_lattice, subpaths)
+end
+
+"""
+    $(SIGNATURES)
+
+Convert the labels of `kpath` to Unicode in place, see [`unicode_kpoint_labels`](@ref).
+"""
+function unicode_kpoint_labels!(kpath::KPath)
+    for sp in kpath.subpaths
+        map!(unicode_kpoint_labels, sp.labels, sp.labels)
+    end
+    return kpath
+end
+
+# ---------------------------------------------------------------------------
+# Comparison and printing
+# ---------------------------------------------------------------------------
+
+function Base.:(==)(a::Subpath, b::Subpath)
+    return a.vertices == b.vertices && a.labels == b.labels && a.divisions == b.divisions
+end
+
+function Base.isapprox(a::Subpath, b::Subpath; kwargs...)
+    a.labels == b.labels || return false
+    a.divisions == b.divisions || return false
+    length(a.vertices) == length(b.vertices) || return false
+    return all(isapprox.(a.vertices, b.vertices; kwargs...))
+end
+
+Base.:(==)(a::KPath, b::KPath) = a.recip_lattice == b.recip_lattice && a.subpaths == b.subpaths
 
 function Base.isapprox(a::KPath, b::KPath; kwargs...)
-    # indices and labels must match exactly
-    if a.indices != b.indices || a.labels != b.labels
-        return false
+    isapprox(a.recip_lattice, b.recip_lattice; kwargs...) || return false
+    length(a.subpaths) == length(b.subpaths) || return false
+    return all(isapprox(x, y; kwargs...) for (x, y) in zip(a.subpaths, b.subpaths))
+end
+
+# Number of vertices up to which a fully labeled subpath is printed as corners.
+const _SHOW_CORNERS_LIMIT = 12
+
+# Describe a subpath in one line: corner form when every vertex is labeled and
+# the list is short, tick form otherwise. `offset` shifts tick indices to the
+# global k-point numbering.
+function _describe(io::IO, sp::Subpath, offset::Integer = 0)
+    labels = get(io, :unicode, true) ? unicode_kpoint_labels(sp.labels) : sp.labels
+    m = length(sp.vertices)
+    if all(!isempty, labels) && m <= _SHOW_CORNERS_LIMIT
+        print(io, join(labels, "—"))
+        isempty(sp.divisions) || print(io, "  divisions ", join(sp.divisions, " "))
+    else
+        print(io, n_kpoints(sp), " kpoints")
+        _, ticks = _sample(sp)
+        if isempty(ticks)
+            print(io, ", no ticks")
+        else
+            print(io, "  ticks ", join((string(unicode_kpoint_labels(l), "@", i + offset) for (i, l) in ticks), " "))
+        end
     end
-    # reciprocal lattice and points compared approximately
-    if !isapprox(a.recip_lattice, b.recip_lattice; kwargs...)
-        return false
+    return
+end
+
+function Base.show(io::IO, sp::Subpath)
+    print(io, "Subpath(")
+    _describe(io, sp)
+    return print(io, ")")
+end
+
+function Base.show(io::IO, ::MIME"text/plain", sp::Subpath{T}) where {T}
+    print(io, "Subpath{$T}: ", length(sp.vertices), " vertices, ", n_kpoints(sp), " kpoints\n  ")
+    return _describe(io, sp)
+end
+
+Base.summary(io::IO, kpath::KPath) =
+    print(io, "KPath(", length(kpath.subpaths), " subpaths, ", n_kpoints(kpath), " kpoints)")
+
+Base.show(io::IO, kpath::KPath) = summary(io, kpath)
+
+function Base.show(io::IO, ::MIME"text/plain", kpath::KPath{T}) where {T}
+    println(io, "KPath{$T}: ", length(kpath.subpaths), " subpaths, ", n_kpoints(kpath), " kpoints")
+    println(io, "  recip_lattice (Å⁻¹, columns):")
+    for row in eachrow(kpath.recip_lattice)
+        println(io, "    ", join(map(x -> lpad(_fmt(x), 12), row)))
     end
-    if length(a.points) != length(b.points)
-        return false
+    limit = get(io, :limit, false) ? 20 : typemax(Int)
+    offset = 0
+    for (i, sp) in enumerate(kpath.subpaths)
+        if i > limit
+            print(io, "  ⋮ (", length(kpath.subpaths) - limit, " more subpaths)")
+            break
+        end
+        i > 1 && println(io)
+        print(io, "  ", i, ": ")
+        _describe(io, sp, offset)
+        offset += n_kpoints(sp)
     end
-    return all(isapprox.(a.points, b.points; kwargs...))
+    return
 end

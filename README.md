@@ -82,30 +82,74 @@ julia> cart_to_frac(lattice, cart_coords)
  0.5
 ```
 
-### K-point paths in the Brillouin zone
+### Crystal structures
 
 ```julia
-# Define a kpoint path with explicit kpoint coordinates along the path
-julia> points = [[i/10, 0.0, 0.0] for i in 0:5]
-julia> indices = [1, 6]
-julia> labels = ["Γ", "X"]
-julia> KPath(recip_lattice, points, indices, labels)
-KPath{Float64} with 6 k-points and 2 high-symmetry labels:
-  Path: Γ → X
-  High-symmetry k-points:
-    1: Γ  (0.0, 0.0, 0.0)
-    6: X  (0.5, 0.0, 0.0)
+julia> lattice = [0.0 2.715 2.715; 2.715 0.0 2.715; 2.715 2.715 0.0]
+julia> si = Crystal(lattice, [[0.0, 0.0, 0.0], [0.25, 0.25, 0.25]], ["Si", "Si"])
+Crystal{Float64}: Si2, 2 atoms
+  lattice (Å, columns):
+             0.0       2.715       2.715
+           2.715         0.0       2.715
+           2.715       2.715         0.0
+  atoms (fractional):
+    Si           0.0         0.0         0.0
+    Si          0.25        0.25        0.25
 
-# Alternatively, only define the high-symmetry kpoints along the path, without
-# intermediate kpoints between them
-julia> segments = [["Γ", "M"], ["M", "K"]]
-julia> coords = Dict("Γ" => [0.0, 0.0, 0.0], "M" => [0.5, 0.5, 0.0], "K" => [1/3, 1/3, 0.0])
-julia> KSegment(recip_lattice, segments, coords)
-KSegment{Float64} with 2 segments and 3 high-symmetry k-points:
-  Segment 1: Γ → M
-  Segment 2: M → K
-  Coordinates:
-    K  (0.3333, 0.3333, 0.0)
-    M  (0.5, 0.5, 0.0)
-    Γ  (0.0, 0.0, 0.0)
+julia> n_atoms(si), formula(si), reciprocal_lattice(si) ≈ reciprocal_lattice(lattice)
+(2, "Si2", true)
+
+# Per-site labels refine the element: `Fe1`/`Fe2` are two Fe sites
+julia> fe = Crystal(lattice, ["Fe1" => [0.0, 0.0, 0.0], "Fe2" => [0.5, 0.5, 0.5]])
+julia> atom_symbols(fe), unique_species(fe)
+(["Fe", "Fe"], ["Fe1", "Fe2"])
+
+# With `using Spglib`: space group and symmetry-consistent k-point grids
+julia> using Spglib
+julia> spacegroup(si)
+(symbol = "Fd-3m", number = 227)
+julia> kgrid_from_density(si, 3.0)
+(7, 7, 7)
+```
+
+### K-point paths in the Brillouin zone
+
+A `KPath` stores the *route*: connected `Subpath`s of labeled vertices with a
+division count per segment. The dense k-points, the plot axis and the ticks
+are derived on demand.
+
+```julia
+# From wannier90-style segments; divisions follow `bands_num_points`
+julia> recip_lattice = reciprocal_lattice(lattice)
+julia> kpoint_path = [["Γ" => [0.0, 0.0, 0.0], "X" => [0.5, 0.0, 0.5]],
+                      ["X" => [0.5, 0.0, 0.5], "U" => [0.625, 0.25, 0.625]]]
+julia> kp = KPath(recip_lattice, kpoint_path; n_points_first_segment = 5)
+KPath{Float64}: 1 subpaths, 8 kpoints
+  recip_lattice (Å⁻¹, columns):
+       -1.157124    1.157124    1.157124
+        1.157124   -1.157124    1.157124
+        1.157124    1.157124   -1.157124
+  1: Γ—X—U  divisions 5 2
+
+julia> kpoints(kp)[1:3]
+3-element Vector{StaticArraysCore.SVector{3, Float64}}:
+ [0.0, 0.0, 0.0]
+ [0.1, 0.0, 0.1]
+ [0.2, 0.0, 0.2]
+
+julia> axis(kp), tick_indices(kp), tick_labels(kp)
+([0.0, 0.2314, …], [1, 6, 8], ["Γ", "X", "U"])
+
+# Wrap an explicit k-point list verbatim (e.g. from wannier90 band.kpt + labelinfo)
+julia> KPath(recip_lattice, kpoints(kp), [1, 6, 8], ["Γ", "X", "U"])
+
+# Change the sampling without touching the route
+julia> resample(kp; density = 50.0)
+
+# With `using Spglib, Brillouin`: the standard path of a crystal
+julia> KPath(si)
+KPath{Float64}: 2 subpaths, 451 kpoints
+  ...
+  1: Γ—X—U  divisions 100 35
+  2: K—Γ—L—W—X  divisions 106 87 71 50
 ```

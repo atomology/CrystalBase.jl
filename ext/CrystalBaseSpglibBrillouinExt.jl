@@ -6,14 +6,18 @@ using CrystalBase
 import Spglib
 import Brillouin
 
-function CrystalBase.KSegment(
-        lattice::AbstractMatrix, atom_positions::AbstractVector, atom_numbers::AbstractVector{<:Integer}
-    )
-    vecs = collect(eachcol(lattice))
-    cell = Spglib.Cell(vecs, Vector.(atom_positions), atom_numbers)
-    bkpath = Brillouin.irrfbz_path(cell)
-    kseg = CrystalBase.KSegment(bkpath)
-    return kseg
+"""
+    KPath(crystal::Crystal; n_points_first_segment = 100)
+
+Standard high-symmetry k-point path of `crystal` (any setting, standard or
+not), from `Brillouin.irrfbz_path`. Divisions follow the wannier90 rule, see
+[`resample`](@ref).
+
+Requires `using Spglib, Brillouin`.
+"""
+function CrystalBase.KPath(crystal::Crystal; n_points_first_segment::Integer = 100)
+    bkpath = Brillouin.irrfbz_path(Spglib.Cell(crystal))
+    return resample(KPath(bkpath); n_points_first_segment)
 end
 
 end # module

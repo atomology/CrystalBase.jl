@@ -1,81 +1,3 @@
-@testitem "group_nearby_indices" begin
-    using CrystalBase: group_nearby_indices
-    indices = [1, 2, 4, 5, 6]
-    grps = group_nearby_indices(indices)
-    @test grps == [[1, 2], [4, 5, 6]]
-end
-
-@testitem "KSegment" begin
-    using OrderedCollections: OrderedDict
-
-    lattice = [
-        -2.6988 0.0 -2.6988
-        0.0 2.6988 2.6988
-        2.6988 2.6988 0.0
-    ]
-    recip_lattice = reciprocal_lattice(lattice)
-    kpoint_path = [
-        ["L" => [0.5, 0.5, 0.5], "G" => [0.0, 0.0, 0.0]],
-        ["G" => [0.0, 0.0, 0.0], "X" => [0.5, 0.0, 0.5]],
-        ["X" => [0.5, -0.5, 0.0], "K" => [0.375, -0.375, 0.0]],
-        ["K" => [0.375, -0.375, 0.0], "G" => [0.0, 0.0, 0.0]],
-    ]
-    kseg = KSegment(recip_lattice, kpoint_path)
-
-    ref_kseg = (;
-        recip_lattice = reduce(
-            hcat, [
-                [-1.164069, -1.164069, 1.164069],
-                [1.164069, 1.164069, 1.164069],
-                [-1.164069, 1.164069, -1.164069],
-            ]
-        ),
-        segments = [["L", "G", "X"], ["X_1", "K", "G"]],
-        coords = OrderedDict(
-            "X_1" => [0.5, -0.5, 0.0],
-            "G" => [0.0, 0.0, 0.0],
-            "K" => [0.375, -0.375, 0.0],
-            "L" => [0.5, 0.5, 0.5],
-            "X" => [0.5, 0.0, 0.5],
-        ),
-    )
-    @test isapprox(ref_kseg.recip_lattice, kseg.recip_lattice; atol = 1.0e-5)
-    @test ref_kseg.segments == kseg.segments
-    @test ref_kseg.coords == kseg.coords
-end
-
-@testitem "KSegment from structure" begin
-    using Spglib, Brillouin
-    lattice = [
-        0.0       2.715265       2.715265
-        2.715265       0.0       2.715265
-        2.715265       2.715265       0.0
-    ]
-    atom_positions = [
-        [0.0, 0.0, 0.0],
-        [0.25, 0.25, 0.25],
-    ]
-    atom_symbols = ["Si", "Si"]
-    kseg = KSegment(lattice, atom_positions, atom_symbols)
-
-    @test reciprocal_lattice(kseg) ≈ reciprocal_lattice(lattice)
-    @test real_lattice(kseg) ≈ lattice
-    ref_segments = [
-        ["Γ", "X", "U"],
-        ["K", "Γ", "L", "W", "X"],
-    ]
-    @test ref_segments == kseg.segments
-    # Compare without order
-    @test Dict(kseg.coords) == Dict(
-        "K" => [0.375, 0.375, 0.75],
-        "L" => [0.5, 0.5, 0.5],
-        "U" => [0.625, 0.25, 0.625],
-        "W" => [0.5, 0.25, 0.75],
-        "X" => [0.5, 0.0, 0.5],
-        "Γ" => [0.0, 0.0, 0.0],
-    )
-end
-
 @testmodule KPathEnv begin
     using CrystalBase
     # From WannierDatasets/datasets/Si2/Si2.win, with `bands_num_points = 5`
@@ -126,26 +48,8 @@ end
         [0.5, 0.0, 0.5],
     ]
     # From `Si2_band.labelinfo.dat`
-    labels = [
-        "G",
-        "X",
-        "U",
-        "K",
-        "G",
-        "L",
-        "W",
-        "X",
-    ]
-    indices = [
-        1,
-        6,
-        8,
-        11,
-        16,
-        20,
-        24,
-        27,
-    ]
+    labels = ["G", "X", "U", "K", "G", "L", "W", "X"]
+    indices = [1, 6, 8, 11, 16, 20, 24, 27]
     # From the 1st column of `Si2_band.dat`
     x = [
         0.0e+0,
@@ -178,97 +82,230 @@ end
     ]
 end
 
-@testitem "KPath" setup = [KPathEnv] begin
-    kseg = KSegment(KPathEnv.recip_lattice, KPathEnv.kpoint_path)
-    kp = KPath(kseg, 5)
+@testitem "Subpath" begin
+    sp = Subpath([[0.0, 0.0, 0.0], [0.5, 0.0, 0.0], [0.5, 0.5, 0.0]], ["G", "X", "M"]; divisions = [4, 2])
+    @test sp.divisions == [4, 2]
+    @test CrystalBase.n_kpoints(sp) == 7
+    @test length(Subpath([[0.0, 0.0, 0.0]]).divisions) == 0
+    # integer divisions broadcast
+    @test Subpath([[0, 0, 0], [1, 0, 0], [1, 1, 0]]; divisions = 3).divisions == [3, 3]
+    @test eltype(Subpath([[0, 0, 0], [1, 0, 0]]).vertices) == Vec3{Float64}
+    @test_throws ArgumentError Subpath(Vector{Vector{Float64}}())
+    @test_throws DimensionMismatch Subpath([[0.0, 0.0, 0.0], [1.0, 0.0, 0.0]], ["G"])
+    @test_throws DimensionMismatch Subpath([[0.0, 0.0, 0.0], [1.0, 0.0, 0.0]]; divisions = [1, 1])
+    @test_throws ArgumentError Subpath([[0.0, 0.0, 0.0], [1.0, 0.0, 0.0]]; divisions = 0)
+end
+
+@testitem "KPath from wannier90 kpoint_path" setup = [KPathEnv] begin
+    kp = KPath(KPathEnv.recip_lattice, KPathEnv.kpoint_path; n_points_first_segment = 5)
 
     @test reciprocal_lattice(kp) ≈ KPathEnv.recip_lattice
     @test real_lattice(kp) ≈ KPathEnv.lattice
-    @test all(isapprox.(kp.points, KPathEnv.kpoints; atol = 1.0e-5))
-    @test kp.labels == KPathEnv.labels
-    @test kp.indices == KPathEnv.indices
-end
-
-@testitem "KPath multi-segment indices" begin
-    using LinearAlgebra
-    using OrderedCollections: OrderedDict
-
-    lattice = Matrix{Float64}(I, 3, 3)
-    recip_lattice = reciprocal_lattice(lattice)
-
-    # Two disconnected segments: A->B and C->D
-    segments = [["A", "B"], ["C", "D"]]
-    coords = OrderedDict(
-        "A" => [0.0, 0.0, 0.0],
-        "B" => [1.0, 0.0, 0.0],
-        "C" => [0.0, 0.0, 0.0],
-        "D" => [0.0, 2.0, 0.0],
-    )
-
-    kseg = KSegment(recip_lattice, segments, coords)
-    kp = KPath(kseg, 5)
-
-    @test kp.labels == ["A", "B", "C", "D"]
-    @test kp.indices == [1, 6, 7, 17]
-    @test length(kp) == 17
-end
-
-@testitem "linear_path" setup = [KPathEnv] begin
-    kseg = KSegment(KPathEnv.recip_lattice, KPathEnv.kpoint_path)
-    kp = KPath(kseg, 5)
-    x = linear_path(kp)[1]
-    @test all(isapprox.(KPathEnv.x, x; atol = 1.0e-5))
-end
-
-@testitem "Base.collect(KPath)" setup = [KPathEnv] begin
-    kseg = KSegment(KPathEnv.recip_lattice, KPathEnv.kpoint_path)
-    kp = KPath(kseg, 5)
-    @test kp.points == collect(kp)
+    # all segments share corners, so one connected subpath
+    @test length(kp.subpaths) == 1
+    @test kp.subpaths[1].labels == ["G", "X", "U", "K", "G", "L", "W", "X"]
+    @test kp.subpaths[1].divisions == [5, 2, 3, 5, 4, 4, 3]
+    @test n_kpoints(kp) == 27
+    @test all(isapprox.(kpoints(kp), KPathEnv.kpoints; atol = 1.0e-5))
+    @test kpoints_cart(kp) ≈ frac_to_cart(KPathEnv.recip_lattice, KPathEnv.kpoints) atol = 1.0e-5
+    @test tick_labels(kp) == KPathEnv.labels
+    @test tick_indices(kp) == KPathEnv.indices
+    @test all(isapprox.(axis(kp), KPathEnv.x; atol = 1.0e-5))
+    @test tick_positions(kp) ≈ KPathEnv.x[KPathEnv.indices] atol = 1.0e-5
 
     # The default 100 points/segment should return 511 kpoints as in
     # `WannierDatasets/datasets/Si2/outputs/MDRS/Si2_band.kpt`
-    kp2 = KPath(kseg)
-    @test length(kp2) == 511
+    @test n_kpoints(KPath(KPathEnv.recip_lattice, KPathEnv.kpoint_path)) == 511
+
+    # Symbol labels are accepted
+    kp_sym = KPath(KPathEnv.recip_lattice, [[:G => [0.0, 0.0, 0.0], :X => [0.5, 0.0, 0.5]]])
+    @test kp_sym.subpaths[1].labels == ["G", "X"]
 end
 
-@testitem "isapprox for KSegment and KPath" begin
-    # simple path
-    lattice = [1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0]
+@testitem "KPath disconnected segments" begin
+    using LinearAlgebra
+    recip_lattice = Matrix{Float64}(I, 3, 3)
+    # Same label, different coordinate: a break with both labels kept
+    kpoint_path = [
+        ["L" => [0.5, 0.5, 0.5], "G" => [0.0, 0.0, 0.0]],
+        ["G" => [0.0, 0.0, 0.0], "X" => [0.5, 0.0, 0.5]],
+        ["X" => [0.5, -0.5, 0.0], "K" => [0.375, -0.375, 0.0]],
+        ["K" => [0.375, -0.375, 0.0], "G" => [0.0, 0.0, 0.0]],
+    ]
+    kp = KPath(recip_lattice, kpoint_path; n_points_first_segment = 4)
+    @test length(kp.subpaths) == 2
+    @test kp.subpaths[1].labels == ["L", "G", "X"]
+    @test kp.subpaths[2].labels == ["X", "K", "G"]
+    @test tick_labels(kp) == ["L", "G", "X|X", "K", "G"]
+
+    # Two disconnected segments: A->B and C->D, axis is flat across the break
+    kpoint_path = [
+        ["A" => [0.0, 0.0, 0.0], "B" => [1.0, 0.0, 0.0]],
+        ["C" => [0.0, 0.0, 0.0], "D" => [0.0, 2.0, 0.0]],
+    ]
+    kp = KPath(recip_lattice, kpoint_path; n_points_first_segment = 5)
+    @test [sp.divisions for sp in kp.subpaths] == [[5], [10]]
+    @test n_kpoints(kp) == 17
+    @test tick_indices(kp) == [1, 6, 17]
+    @test tick_labels(kp) == ["A", "B|C", "D"]
+    x = axis(kp)
+    @test x[6] ≈ 1.0
+    @test x[7] ≈ 1.0
+    @test x[end] ≈ 3.0
+end
+
+@testitem "KPath verbatim from kpoints" setup = [KPathEnv] begin
+    # wannier90 band.kpt + labelinfo layout
+    kp = KPath(KPathEnv.recip_lattice, KPathEnv.kpoints, KPathEnv.indices, KPathEnv.labels)
+    @test length(kp.subpaths) == 1
+    @test all(sp -> all(==(1), sp.divisions), kp.subpaths)
+    @test kpoints(kp) == KPathEnv.kpoints
+    @test tick_indices(kp) == KPathEnv.indices
+    @test tick_labels(kp) == KPathEnv.labels
+    @test all(isapprox.(axis(kp), KPathEnv.x; atol = 1.0e-5))
+
+    # per-point labels keyword gives the same path
+    full_labels = fill("", length(KPathEnv.kpoints))
+    full_labels[KPathEnv.indices] .= KPathEnv.labels
+    @test KPath(KPathEnv.recip_lattice, KPathEnv.kpoints; labels = full_labels) == kp
+
+    # Consecutive labeled indices mark a break (wannier90 convention)
+    route = KPath(
+        KPathEnv.recip_lattice,
+        [["A" => [0.0, 0.0, 0.0], "B" => [0.5, 0.0, 0.0]], ["C" => [0.0, 0.0, 0.0], "D" => [0.0, 0.5, 0.0]]];
+        n_points_first_segment = 4,
+    )
+    dense = KPath(KPathEnv.recip_lattice, kpoints(route), [1, 5, 6, 10], ["A", "B", "C", "D"])
+    @test length(dense.subpaths) == 2
+    @test tick_labels(dense) == ["A", "B|C", "D"]
+    @test axis(dense) ≈ axis(route)
+
+    # Geometric break detection without labels
+    geometric = KPath(KPathEnv.recip_lattice, kpoints(route))
+    @test length(geometric.subpaths) == 2
+    @test all(isempty, tick_labels(geometric))
+    @test length(KPath(KPathEnv.recip_lattice, kpoints(route); break_tol = 0).subpaths) == 1
+
+    @test_throws DimensionMismatch KPath(KPathEnv.recip_lattice, KPathEnv.kpoints; labels = ["G"])
+    @test_throws ArgumentError KPath(KPathEnv.recip_lattice, KPathEnv.kpoints, [100], ["G"])
+end
+
+@testitem "resample" setup = [KPathEnv] begin
+    kp = KPath(KPathEnv.recip_lattice, KPathEnv.kpoint_path; n_points_first_segment = 5)
+    kp100 = resample(kp; n_points_first_segment = 100)
+    @test kp100 == KPath(KPathEnv.recip_lattice, KPathEnv.kpoint_path)
+    @test kp100.subpaths[1].vertices == kp.subpaths[1].vertices
+    @test kp100.subpaths[1].labels == kp.subpaths[1].labels
+
+    dense = resample(kp; density = 10.0)
+    lengths = CrystalBase._segment_lengths(KPathEnv.recip_lattice, kp.subpaths[1])
+    @test dense.subpaths[1].divisions == max.(round.(Int, lengths .* 10.0, RoundNearestTiesUp), 1)
+
+    @test_throws ArgumentError resample(kp)
+    @test_throws ArgumentError resample(kp; density = 1.0, n_points_first_segment = 1)
+end
+
+@testitem "unicode_kpoint_labels" begin
+    using LinearAlgebra
+    @test CrystalBase.unicode_kpoint_labels(["GAMMA", "DELTA_0", "LAMBDA_1", "SIGMA_2", "X", ""]) ==
+        ["Γ", "Δ₀", "Λ₁", "Σ₂", "X", ""]
+    kp = KPath(Matrix{Float64}(I, 3, 3), [["GAMMA" => [0.0, 0.0, 0.0], "X_1" => [0.5, 0.0, 0.0]]])
+    kp_unicode = unicode_kpoint_labels(kp)
+    @test tick_labels(kp_unicode) == ["Γ", "X₁"]
+    @test tick_labels(kp) == ["GAMMA", "X_1"]
+    unicode_kpoint_labels!(kp)
+    @test tick_labels(kp) == ["Γ", "X₁"]
+end
+
+@testitem "isapprox for KPath" begin
+    using LinearAlgebra
+    lattice = Matrix{Float64}(I, 3, 3)
     kpoint_path = [
         ["G" => [0.0, 0.0, 0.0], "X" => [0.5, 0.0, 0.0]],
         ["X" => [0.5, 0.0, 0.0], "L" => [1.0, 0.0, 0.0]],
     ]
-    ks1 = KSegment(lattice, kpoint_path)
-    # small perturbation in coordinates
+    kp1 = KPath(lattice, kpoint_path; n_points_first_segment = 10)
     kpoint_path2 = [
         ["G" => [1.0e-7, 0.0, 0.0], "X" => [0.5 + 1.0e-7, 0.0, 0.0]],
         ["X" => [0.5 + 1.0e-7, 0.0, 0.0], "L" => [1.0 + 1.0e-7, 0.0, 0.0]],
     ]
-    ks2 = KSegment(lattice, kpoint_path2)
-    @test isapprox(ks1, ks2; atol = 1e-6)
-    @test !isapprox(ks1, ks2)
-    # different labels -> not approx
-    kpoint_path3 = [
-        ["G" => [0.0, 0.0, 0.0], "Y" => [0.5, 0.0, 0.0]],
-    ]
-    ks3 = KSegment(lattice, kpoint_path3)
-    @test !isapprox(ks1, ks3; atol = 1e-6)
-
-    # KPath via KSegment
-    kp1 = KPath(ks1, 10)
-    kp2 = KPath(ks2, 10)
-    @test isapprox(kp1, kp2; atol = 1e-6)
+    kp2 = KPath(lattice, kpoint_path2; n_points_first_segment = 10)
+    @test isapprox(kp1, kp2; atol = 1.0e-6)
     @test !isapprox(kp1, kp2)
+    @test kp1 == KPath(lattice, kpoint_path; n_points_first_segment = 10)
+    # different labels -> not approx
+    kp3 = KPath(lattice, [["G" => [0.0, 0.0, 0.0], "Y" => [0.5, 0.0, 0.0]]]; n_points_first_segment = 10)
+    @test !isapprox(kp1, kp3; atol = 1.0e-6)
 end
 
-@testitem "KPathInterpolant from KPath" setup = [KPathEnv] begin
+@testitem "show KPath" setup = [KPathEnv] begin
+    kp = KPath(KPathEnv.recip_lattice, KPathEnv.kpoint_path; n_points_first_segment = 5)
+    s = sprint(show, MIME("text/plain"), kp)
+    @test occursin("1 subpaths, 27 kpoints", s)
+    @test occursin("G—X—U—K—G—L—W—X  divisions 5 2 3 5 4 4 3", s)
+    @test sprint(show, kp) == "KPath(1 subpaths, 27 kpoints)"
+
+    dense = KPath(KPathEnv.recip_lattice, KPathEnv.kpoints, KPathEnv.indices, KPathEnv.labels)
+    s = sprint(show, MIME("text/plain"), dense)
+    @test occursin("27 kpoints  ticks G@1 X@6 U@8", s)
+
+    unlabeled = KPath(KPathEnv.recip_lattice, KPathEnv.kpoints; break_tol = 0)
+    @test occursin("27 kpoints, no ticks", sprint(show, MIME("text/plain"), unlabeled))
+
+    # labels are displayed in unicode
+    gamma = KPath(KPathEnv.recip_lattice, [["GAMMA" => [0.0, 0.0, 0.0], "X" => [0.5, 0.0, 0.5]]])
+    @test occursin("Γ—X", sprint(show, MIME("text/plain"), gamma))
+    @test occursin("GAMMA—X", sprint(show, MIME("text/plain"), gamma; context = :unicode => false))
+end
+
+@testitem "KPath from Crystal" begin
+    using Spglib
+    import Brillouin
+    lattice = [
+        0.0       2.715265       2.715265
+        2.715265       0.0       2.715265
+        2.715265       2.715265       0.0
+    ]
+    crystal = Crystal(lattice, [[0.0, 0.0, 0.0], [0.25, 0.25, 0.25]], ["Si", "Si"])
+    kp = KPath(crystal)
+
+    @test reciprocal_lattice(kp) ≈ reciprocal_lattice(lattice)
+    @test real_lattice(kp) ≈ lattice
+    @test [sp.labels for sp in kp.subpaths] == [["Γ", "X", "U"], ["K", "Γ", "L", "W", "X"]]
+    @test kp.subpaths[1].divisions[1] == 100
+    coords = Dict(l => v for sp in kp.subpaths for (l, v) in zip(sp.labels, sp.vertices))
+    @test coords == Dict(
+        "K" => [0.375, 0.375, 0.75],
+        "L" => [0.5, 0.5, 0.5],
+        "U" => [0.625, 0.25, 0.625],
+        "W" => [0.5, 0.25, 0.75],
+        "X" => [0.5, 0.0, 0.5],
+        "Γ" => [0.0, 0.0, 0.0],
+    )
+    @test tick_labels(kp) == ["Γ", "X", "U|K", "Γ", "L", "W", "X"]
+end
+
+@testitem "Brillouin interop" setup = [KPathEnv] begin
     import Bravais, Brillouin
 
-    kseg = KSegment(KPathEnv.recip_lattice, KPathEnv.kpoint_path)
-    kp = KPath(kseg, 5)
+    kp = KPath(KPathEnv.recip_lattice, KPathEnv.kpoint_path; n_points_first_segment = 5)
     kpi = Brillouin.KPathInterpolant(kp)
 
-    @test all(isapprox.(kpi, kp.points; atol = 1.0e-5))
+    @test all(isapprox.(kpi, kpoints(kp); atol = 1.0e-5))
     @test mat3(kpi.basis) == kp.recip_lattice
-    @test kpi.labels[1] == Dict(i => Symbol(l) for (i, l) in zip(kp.indices, kp.labels))
+    @test kpi.labels[1] == Dict(i => Symbol(l) for (i, l) in zip(tick_indices(kp), tick_labels(kp)))
+
+    # round trip through the interpolant gives the verbatim path
+    back = KPath(kpi)
+    @test back ≈ KPath(KPathEnv.recip_lattice, kpoints(kp), tick_indices(kp), tick_labels(kp))
+
+    # two disconnected lines map to two subpaths
+    kp2 = KPath(
+        KPathEnv.recip_lattice,
+        [["A" => [0.0, 0.0, 0.0], "B" => [0.5, 0.0, 0.0]], ["C" => [0.0, 0.0, 0.0], "D" => [0.0, 0.5, 0.0]]];
+        n_points_first_segment = 4,
+    )
+    kpi2 = Brillouin.KPathInterpolant(kp2)
+    @test length(kpi2.kpaths) == 2
+    @test length(KPath(kpi2).subpaths) == 2
 end
