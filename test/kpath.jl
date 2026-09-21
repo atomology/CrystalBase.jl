@@ -148,6 +148,9 @@ end
     @test n_kpoints(kp) == 17
     @test tick_indices(kp) == [1, 6, 17]
     @test tick_labels(kp) == ["A", "B|C", "D"]
+    @test tick_indices(kp; merge = false) == [1, 6, 7, 17]
+    @test tick_labels(kp; merge = false) == ["A", "B", "C", "D"]
+    @test tick_positions(kp; merge = false) ≈ [0.0, 1.0, 1.0, 3.0]
     x = axis(kp)
     @test x[6] ≈ 1.0
     @test x[7] ≈ 1.0
