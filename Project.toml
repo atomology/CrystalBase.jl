@@ -1,6 +1,6 @@
 name = "CrystalBase"
 uuid = "0ae0509d-b425-412a-aec4-62d47edd1221"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Junfeng Qiao <qiaojunfeng@outlook.com> and contributors"]
 
 [workspace]
@@ -23,6 +23,7 @@ Spglib = "f761d5c5-86db-4880-b97f-9680a7cccfb5"
 CrystalBaseBravaisBrillouinExt = ["Bravais", "Brillouin"]
 CrystalBaseBrillouinExt = ["Brillouin"]
 CrystalBaseSpglibBrillouinExt = ["Spglib", "Brillouin"]
+CrystalBaseSpglibExt = "Spglib"
 
 [compat]
 Bravais = "0.2"

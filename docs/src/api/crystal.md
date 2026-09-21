@@ -1,4 +1,4 @@
-# Kpoint path
+# Crystal
 
 ```@meta
 CurrentModule = CrystalBase
@@ -8,7 +8,7 @@ CurrentModule = CrystalBase
 
 ```@index
 Pages = [
-    "kpath.md",
+    "crystal.md",
 ]
 ```
 
@@ -17,6 +17,6 @@ Pages = [
 ```@autodocs
 Modules = [CrystalBase]
 Pages = [
-    "kpath.jl",
+    "crystal.jl",
 ]
 ```

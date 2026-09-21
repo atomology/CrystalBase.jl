@@ -13,6 +13,7 @@ makedocs(;
             "Type" => "api/type.md",
             "Lattice" => "api/lattice.md",
             "Atom" => "api/atom.md",
+            "Crystal" => "api/crystal.md",
             "Kpoint Path" => "api/kpath.md",
         ],
     ],

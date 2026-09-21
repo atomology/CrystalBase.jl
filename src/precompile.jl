@@ -7,18 +7,13 @@ using PrecompileTools: @setup_workload, @compile_workload
         [0.0, 0.0, 5.43],
     )
     recip_lattice = reciprocal_lattice(lattice)
-
-    coords = OrderedDict(
-        "GAMMA" => vec3(0.0, 0.0, 0.0),
-        "X" => vec3(0.5, 0.0, 0.0),
-        "M" => vec3(0.5, 0.5, 0.0),
-        "R" => vec3(0.5, 0.5, 0.5),
-    )
-    segments = [["GAMMA", "X", "M"], ["M", "R"]]
-
-    kseg = KSegment(recip_lattice, segments, coords)
-    kpath = KPath(kseg, 80)
     frac_positions = [vec3(0.0, 0.0, 0.0), vec3(0.25, 0.25, 0.25)]
+
+    kpoint_path = [
+        ["GAMMA" => [0.0, 0.0, 0.0], "X" => [0.5, 0.0, 0.0]],
+        ["X" => [0.5, 0.0, 0.0], "M" => [0.5, 0.5, 0.0]],
+        ["M" => [0.5, 0.5, 0.0], "R" => [0.5, 0.5, 0.5]],
+    ]
 
     @compile_workload begin
         vec3([1.0, 2.0, 3.0])
@@ -39,9 +34,31 @@ using PrecompileTools: @setup_workload, @compile_workload
         atomic_number(["Si", "O"])
         atomic_symbol(14)
         atomic_symbol([14, 8])
+        label_symbol("Fe1")
+        formula(["Si", "O", "O"])
 
+        crystal = Crystal(lattice, frac_positions, ["Si", "Si"])
+        Crystal(lattice, ["Si" => frac_positions[1], "Si" => frac_positions[2]])
+        n_atoms(crystal)
+        atom_symbols(crystal)
+        unique_species(crystal)
+        formula(crystal)
+        atom_positions_cart(crystal)
+        kgrid_from_density(crystal, 5.0; symmetrize = false)
+        sprint(show, MIME("text/plain"), crystal)
+
+        kpath = KPath(recip_lattice, kpoint_path; n_points_first_segment = 20)
+        kpoints(kpath)
+        kpoints_cart(kpath)
+        axis(kpath)
+        tick_indices(kpath)
+        tick_labels(kpath)
+        tick_positions(kpath)
+        resample(kpath; density = 20.0)
+        unicode_kpoint_labels(kpath)
         unicode_kpoint_labels(["GAMMA", "DELTA_0", "SIGMA_2", "X"])
-        linear_path(kpath)
         KPath(recip_lattice, frac_positions, [1, 2], ["GAMMA", "R"])
+        KPath(recip_lattice, frac_positions; labels = ["GAMMA", "R"])
+        sprint(show, MIME("text/plain"), kpath)
     end
 end
