@@ -35,7 +35,11 @@ function CrystalBase.coupled_axes(crystal::Crystal; symprec::Real = 1.0e-5)
     dataset = Spglib.get_dataset(Spglib.Cell(crystal), symprec)
     # union-find over the three axes
     parent = [1, 2, 3]
-    find(a) = (while parent[a] != a; a = parent[a]; end; a)
+    find(a) = (
+        while parent[a] != a
+            a = parent[a]
+        end; a
+    )
     for rotation in dataset.rotations
         for i in 1:3, j in 1:3
             (i != j && rotation[i, j] != 0) || continue
