@@ -30,10 +30,16 @@ end
     @test atom_symbols(fe) == ["Fe", "Fe", "O"]
     @test unique_species(fe) == ["Fe1", "Fe2", "O"]
 
+    # dummy sites of a synthetic model
+    toy = Crystal(CrystalEnv.lattice, CrystalEnv.positions, ["X1", "X2"])
+    @test toy.atom_numbers == [0, 0]
+    @test atom_symbols(toy) == ["X", "X"]
+    @test formula(toy) == "X2"
+
     @test_throws DimensionMismatch Crystal(CrystalEnv.lattice, CrystalEnv.positions, ["Si"])
     @test_throws DimensionMismatch Crystal(CrystalEnv.lattice, CrystalEnv.positions, [14], ["Si", "Si"])
     @test_throws ArgumentError Crystal(CrystalEnv.lattice, CrystalEnv.positions, [14, 14], ["Si", "O"])
-    @test_throws ArgumentError Crystal(CrystalEnv.lattice, CrystalEnv.positions, ["Si", "Xx"])
+    @test_throws ArgumentError Crystal(CrystalEnv.lattice, CrystalEnv.positions, ["Si", "Zz"])
 end
 
 @testitem "Crystal accessors" setup = [CrystalEnv] begin

@@ -5,7 +5,8 @@ export atomic_number, atomic_symbol
 """
     $(SIGNATURES)
 
-Get atom number from symbol.
+Get atom number from symbol. The dummy symbol `"X"` maps to `0`, see
+[`DUMMY_SYMBOL`](@ref).
 
 # Examples
 ```jldoctest atomic_number; setup = :(using CrystalBase)
@@ -34,13 +35,22 @@ end
 
 function atomic_number(symbols::AbstractVector)
     table = [e.symbol for e in elements]
-    return [findfirst(x -> x == string(s), table) for s in symbols]
+    return map(symbols) do s
+        string(s) == DUMMY_SYMBOL && return 0
+        findfirst(x -> x == string(s), table)
+    end
 end
+
+"""
+Symbol of the dummy element with atomic number `0`, for sites of synthetic
+models that carry no chemical identity.
+"""
+const DUMMY_SYMBOL = "X"
 
 """
     $(SIGNATURES)
 
-Get atomic symbol from number.
+Get atomic symbol from number. `0` maps to the dummy symbol `"X"`.
 
 # Examples
 ```jldoctest atomic_symbol; setup = :(using CrystalBase)
@@ -62,7 +72,7 @@ function atomic_symbol(number::Integer)
 end
 
 function atomic_symbol(numbers::AbstractVector)
-    return [elements[n].symbol for n in numbers]
+    return [n == 0 ? DUMMY_SYMBOL : elements[n].symbol for n in numbers]
 end
 
 export label_symbol, formula
@@ -75,6 +85,8 @@ Element symbol at the head of a species label, e.g. `"Fe1"` → `"Fe"`.
 A species label starts with an element symbol optionally followed by a
 disambiguating suffix (`Fe1`, `Fe_up`, `Fe3+`). The longest valid prefix wins,
 so two-letter symbols are preferred over one (`"Co"` is cobalt, not carbon).
+The dummy symbol `"X"` (atomic number 0) is accepted, so `"X1"` labels a
+site of a synthetic model.
 
 Throws `ArgumentError` if the label does not begin with a known element.
 
