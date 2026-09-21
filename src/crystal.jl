@@ -103,7 +103,7 @@ function Crystal(
         atom_positions::AbstractVector,
         atom_labels::AbstractVector{<:Union{AbstractString, Symbol}},
     )
-    atom_numbers = [atomic_number(label_symbol(string(l))) for l in atom_labels]
+    atom_numbers = Int[atomic_number(label_symbol(string(l))) for l in atom_labels]
     return Crystal(lattice, atom_positions, atom_numbers, atom_labels)
 end
 
