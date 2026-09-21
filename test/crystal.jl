@@ -21,6 +21,10 @@ end
     @test Crystal(CrystalEnv.lattice, CrystalEnv.positions, [14, 14]) == si
     # from label => position pairs (wannier90 atoms_frac)
     @test Crystal(CrystalEnv.lattice, ["Si" => CrystalEnv.positions[1], :Si => CrystalEnv.positions[2]]) == si
+    # empty crystal (lattice only)
+    empty = Crystal(CrystalEnv.lattice, Vec3{Float64}[], String[])
+    @test n_atoms(empty) == 0
+    @test formula(empty) == ""
     # integer positions and lattice are promoted to Float64
     @test Crystal([1 0 0; 0 1 0; 0 0 1], [[0, 0, 0]], ["H"]) isa Crystal{Float64}
 
