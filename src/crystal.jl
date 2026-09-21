@@ -121,6 +121,22 @@ function Crystal(lattice::AbstractMatrix, atoms::AbstractVector{<:Pair})
     return Crystal(lattice, atom_positions, atom_labels)
 end
 
+"""
+    Crystal{T}(crystal::Crystal)
+
+Convert the element type of `crystal`.
+"""
+function Crystal{T}(crystal::Crystal) where {T <: Real}
+    return Crystal{T}(
+        Mat3{T}(crystal.lattice),
+        Vector{Vec3{T}}(crystal.atom_positions),
+        crystal.atom_numbers,
+        crystal.atom_labels,
+    )
+end
+Crystal{T}(crystal::Crystal{T}) where {T <: Real} = crystal
+Base.convert(::Type{Crystal{T}}, crystal::Crystal) where {T <: Real} = Crystal{T}(crystal)
+
 _position_eltype(positions::AbstractVector) =
     isempty(positions) ? Float64 : promote_type(map(p -> eltype(p), positions)...)
 
