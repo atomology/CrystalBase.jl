@@ -58,6 +58,12 @@ end
     @test !isapprox(si, shifted)
     @test si != shifted
     @test si == Crystal(CrystalEnv.lattice, CrystalEnv.positions, ["Si", "Si"])
+
+    si32 = Crystal{Float32}(si)
+    @test si32 isa Crystal{Float32}
+    @test si32 ≈ si
+    @test Crystal{Float64}(si) === si
+    @test convert(Crystal{Float32}, si) isa Crystal{Float32}
 end
 
 @testitem "show Crystal" setup = [CrystalEnv] begin
