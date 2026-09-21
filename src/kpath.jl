@@ -2,7 +2,7 @@ export Subpath, KPath
 export kpoints, kpoints_cart, axis, tick_indices, tick_labels, tick_positions, n_kpoints
 export resample, unicode_kpoint_labels, unicode_kpoint_labels!
 
-# A k-point path is stored as its *route*: subpaths of vertices with
+# A k-point path is stored as polylines: subpaths of vertices with
 # per-segment division counts. The dense k-point list, the plot axis and the
 # high-symmetry ticks are derived on access, never stored. Connectivity is
 # structural: vertices inside one `Subpath` are connected, consecutive
@@ -11,7 +11,7 @@ export resample, unicode_kpoint_labels, unicode_kpoint_labels!
 """
     $(TYPEDEF)
 
-One connected piece of a [`KPath`](@ref): a polyline of vertices.
+One connected polyline of a [`KPath`](@ref).
 
 Consecutive vertices define segments; `divisions[j]` is the number of
 intervals the `j`-th segment is split into when sampled. A verbatim list of
@@ -86,7 +86,7 @@ n_kpoints(sp::Subpath) = 1 + sum(sp.divisions; init = 0)
 """
     $(TYPEDEF)
 
-A k-point path in the Brillouin zone, stored as a route of [`Subpath`](@ref)s.
+A k-point path in the Brillouin zone, stored as polylines, one per [`Subpath`](@ref).
 
 Vertices within a subpath are connected; consecutive subpaths are separated
 by a discontinuity. The dense k-point list ([`kpoints`](@ref)), the
@@ -220,7 +220,7 @@ end
 """
     KPath(recip_lattice, kpoint_path; n_points_first_segment = 100)
 
-Construct a route from a wannier90-style `kpoint_path`: a vector of
+Construct the polylines of a wannier90-style `kpoint_path`: a vector of
 two-point segments, each a pair of `label => fractional coordinate`, as
 returned for the `kpoint_path` block by `WannierIO.read_win`:
 

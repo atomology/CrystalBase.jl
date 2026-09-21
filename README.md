@@ -114,7 +114,7 @@ julia> kgrid_from_density(si, 3.0)
 
 ### K-point paths in the Brillouin zone
 
-A `KPath` stores the *route*: connected `Subpath`s of labeled vertices with a
+A `KPath` stores polylines: connected `Subpath`s of labeled vertices with a
 division count per segment. The dense k-points, the plot axis and the ticks
 are derived on demand.
 
@@ -143,7 +143,7 @@ julia> axis(kp), tick_indices(kp), tick_labels(kp)
 # Wrap an explicit k-point list verbatim (e.g. from wannier90 band.kpt + labelinfo)
 julia> KPath(recip_lattice, kpoints(kp), [1, 6, 8], ["Γ", "X", "U"])
 
-# Change the sampling without touching the route
+# Change the sampling without touching the vertices
 julia> resample(kp; density = 50.0)
 
 # With `using Spglib, Brillouin`: the standard path of a crystal
