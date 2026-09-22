@@ -73,7 +73,9 @@ end
 @testitem "show Crystal" setup = [CrystalEnv] begin
     s = sprint(show, MIME("text/plain"), CrystalEnv.si)
     @test occursin("Crystal{Float64}: Si2, 2 atoms", s)
-    @test occursin("Si          0.25        0.25        0.25", s)
+    # lattice vectors print one per line, decimal points aligned across the block
+    @test occursin("a\u2081 = 0.0       2.715265  2.715265", s)
+    @test occursin("Si  0.25  0.25  0.25", s)
     @test sprint(show, CrystalEnv.si) == "Crystal(Si2, 2 atoms)"
 end
 

@@ -317,3 +317,82 @@ end
 function cart_to_frac(lattice, vec::AbstractVector{<:Real})
     return inv(mat3(lattice)) * vec
 end
+
+"""
+    $(SIGNATURES)
+
+Format a real number for display, rounded to 8 digits.
+
+8 digits keeps a repeating fraction recognizable (`1/3` prints as `0.33333333`,
+not an ambiguous `0.333333`) while staying short of float noise, which a
+`Float64` sum only reaches around the 17th digit. Trailing zeros are dropped by
+`string`, so round values such as `0.25` stay short.
+"""
+_fmt(x::Real) = string(round(x; digits = 8))
+
+"""
+    $(SIGNATURES)
+
+Format `values` as strings of equal width whose decimal points line up.
+
+Unlike a fixed-precision format, trailing zeros are not padded onto the
+fractional part, so `0.0` stays short while its dot still aligns with the dot
+of `2.715265`.
+"""
+function _fmt_aligned(values)
+    strs = map(_fmt, values)
+    splits = map(strs) do s
+        i = findfirst('.', s)
+        isnothing(i) ? (s, "") : (s[1:(i - 1)], s[i:end])
+    end
+    width_int = maximum(length(first(p)) for p in splits; init = 0)
+    width_frac = maximum(length(last(p)) for p in splits; init = 0)
+    return map(p -> lpad(first(p), width_int) * rpad(last(p), width_frac), splits)
+end
+
+"""
+    $(SIGNATURES)
+
+Convert an integer `0 <= i <= 9` to its subscript character, e.g. `1 -> ₁`.
+"""
+function _subscript(i::Integer)
+    @assert 0 <= i <= 9
+    return Char(0x2080 + i)
+end
+
+"""
+    $(SIGNATURES)
+
+Print the columns of `mat` one per line, labelled `symbol` with a subscript.
+
+All entries share one field width, so the decimal points align both down a
+line and across lines.
+"""
+function _show_vectors(io::IO, mat::AbstractMatrix, symbol::Char; indent = "")
+    fields = reshape(_fmt_aligned(vec(mat)), size(mat))
+    for (i, col) in enumerate(eachcol(fields))
+        println(io, rstrip(string(indent, symbol, _subscript(i), " = ", join(col, "  "))))
+    end
+    return
+end
+
+"""
+    $(SIGNATURES)
+
+Print `lattice` (columns are lattice vectors, in Å) as `a₁`, `a₂`, `a₃`.
+"""
+function show_lattice(io::IO, lattice::AbstractMatrix; indent = "")
+    println(io, indent, "lattice (Å):")
+    return _show_vectors(io, lattice, 'a'; indent = indent * "  ")
+end
+
+"""
+    $(SIGNATURES)
+
+Print `recip_lattice` (columns are reciprocal lattice vectors, in Å⁻¹) as
+`b₁`, `b₂`, `b₃`.
+"""
+function show_recip_lattice(io::IO, recip_lattice::AbstractMatrix; indent = "")
+    println(io, indent, "recip_lattice (Å⁻¹):")
+    return _show_vectors(io, recip_lattice, 'b'; indent = indent * "  ")
+end

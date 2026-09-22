@@ -212,25 +212,20 @@ end
 
 function Base.show(io::IO, ::MIME"text/plain", crystal::Crystal{T}) where {T}
     println(io, "Crystal{$T}: ", formula(crystal), ", ", n_atoms(crystal), " atoms")
-    println(io, "  lattice (Å, columns):")
-    for row in eachrow(crystal.lattice)
-        println(io, "    ", join(map(x -> lpad(_fmt(x), 12), row)))
-    end
+    show_lattice(io, crystal.lattice; indent = "  ")
     print(io, "  atoms (fractional):")
     width = maximum(length, crystal.atom_labels; init = 0)
     n = n_atoms(crystal)
-    limit = get(io, :limit, false) ? 20 : typemax(Int)
-    for (i, (label, pos)) in enumerate(zip(crystal.atom_labels, crystal.atom_positions))
-        if i > limit
-            print(io, "\n    ⋮ (", n - limit, " more)")
-            break
-        end
-        print(io, "\n    ", rpad(label, width), "  ", join(map(x -> lpad(_fmt(x), 12), pos)))
+    n_shown = min(n, get(io, :limit, false) ? 20 : n)
+    # align the dots over all shown positions at once, hence the flat format pass
+    fields = reshape(_fmt_aligned(reduce(vcat, @view(crystal.atom_positions[1:n_shown]); init = T[])), 3, :)
+    for i in 1:n_shown
+        label = rpad(crystal.atom_labels[i], width)
+        print(io, "\n", rstrip(string("    ", label, "  ", join(view(fields, :, i), "  "))))
     end
+    n_shown < n && print(io, "\n    ⋮ (", n - n_shown, " more)")
     return
 end
-
-_fmt(x::Real) = string(round(x; digits = 6))
 
 """
     spacegroup(crystal; symprec = 1e-5)

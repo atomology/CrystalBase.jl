@@ -570,10 +570,7 @@ Base.show(io::IO, kpath::KPath) = summary(io, kpath)
 
 function Base.show(io::IO, ::MIME"text/plain", kpath::KPath{T}) where {T}
     println(io, "KPath{$T}: ", length(kpath.subpaths), " subpaths, ", n_kpoints(kpath), " kpoints")
-    println(io, "  recip_lattice (Å⁻¹, columns):")
-    for row in eachrow(kpath.recip_lattice)
-        println(io, "    ", join(map(x -> lpad(_fmt(x), 12), row)))
-    end
+    show_recip_lattice(io, kpath.recip_lattice; indent = "  ")
     limit = get(io, :limit, false) ? 20 : typemax(Int)
     offset = 0
     for (i, sp) in enumerate(kpath.subpaths)

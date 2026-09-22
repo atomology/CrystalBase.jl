@@ -245,6 +245,7 @@ end
     kp = KPath(KPathEnv.recip_lattice, KPathEnv.kpoint_path; n_points_first_segment = 5)
     s = sprint(show, MIME("text/plain"), kp)
     @test occursin("1 subpaths, 27 kpoints", s)
+    @test occursin("recip_lattice (\u00c5\u207b\u00b9):", s)
     @test occursin("G—X—U—K—G—L—W—X  divisions 5 2 3 5 4 4 3", s)
     @test sprint(show, kp) == "KPath(1 subpaths, 27 kpoints)"
 
