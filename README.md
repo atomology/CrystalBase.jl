@@ -88,13 +88,13 @@ julia> cart_to_frac(lattice, cart_coords)
 julia> lattice = [0.0 2.715 2.715; 2.715 0.0 2.715; 2.715 2.715 0.0]
 julia> si = Crystal(lattice, [[0.0, 0.0, 0.0], [0.25, 0.25, 0.25]], ["Si", "Si"])
 Crystal{Float64}: Si2, 2 atoms
-  lattice (Å, columns):
-             0.0       2.715       2.715
-           2.715         0.0       2.715
-           2.715       2.715         0.0
+  lattice (Å):
+    a₁ = 0.0    2.715  2.715
+    a₂ = 2.715  0.0    2.715
+    a₃ = 2.715  2.715  0.0
   atoms (fractional):
-    Si           0.0         0.0         0.0
-    Si          0.25        0.25        0.25
+    Si  0.0   0.0   0.0
+    Si  0.25  0.25  0.25
 
 julia> n_atoms(si), formula(si), reciprocal_lattice(si) ≈ reciprocal_lattice(lattice)
 (2, "Si2", true)
@@ -125,10 +125,10 @@ julia> kpoint_path = [["Γ" => [0.0, 0.0, 0.0], "X" => [0.5, 0.0, 0.5]],
                       ["X" => [0.5, 0.0, 0.5], "U" => [0.625, 0.25, 0.625]]]
 julia> kp = KPath(recip_lattice, kpoint_path; n_points_first_segment = 5)
 KPath{Float64}: 1 subpaths, 8 kpoints
-  recip_lattice (Å⁻¹, columns):
-       -1.157124    1.157124    1.157124
-        1.157124   -1.157124    1.157124
-        1.157124    1.157124   -1.157124
+  recip_lattice (Å⁻¹):
+    b₁ = -1.15712437   1.15712437   1.15712437
+    b₂ =  1.15712437  -1.15712437   1.15712437
+    b₃ =  1.15712437   1.15712437  -1.15712437
   1: Γ—X—U  divisions 5 2
 
 julia> kpoints(kp)[1:3]

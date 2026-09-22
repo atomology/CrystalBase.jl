@@ -321,14 +321,25 @@ end
 """
     $(SIGNATURES)
 
-Format a real number for display, rounded to 8 digits.
+Format a real number for display with up to 8 significant decimals.
 
-8 digits keeps a repeating fraction recognizable (`1/3` prints as `0.33333333`,
-not an ambiguous `0.333333`) while staying short of float noise, which a
-`Float64` sum only reaches around the 17th digit. Trailing zeros are dropped by
-`string`, so round values such as `0.25` stay short.
+8 decimals keeps a repeating fraction recognizable (`1/3` prints as
+`0.33333333`, not an ambiguous `0.333333`) while staying short of float noise,
+which a `Float64` sum only reaches around the 17th digit.
+
+The format is always fixed point, never scientific, so a tiny residual prints
+as `0.00000001` rather than an `1.0e-8` that would not line up with the column
+around it. Trailing zeros are then dropped, so round values such as `0.25` stay
+short. A negative zero prints as `0.0`, since its sign is an artifact of how the
+value was computed, not a property of the position it describes.
 """
-_fmt(x::Real) = string(round(x; digits = 8))
+function _fmt(x::Real)
+    y = float(x)
+    # catches a tiny negative residual too, which would otherwise print as -0.0
+    iszero(round(y; digits = 8)) && return "0.0"
+    s = rstrip(@sprintf("%.8f", y), '0')
+    return endswith(s, '.') ? s * "0" : s
+end
 
 """
     $(SIGNATURES)

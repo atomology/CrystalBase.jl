@@ -3,6 +3,7 @@ module CrystalBase
 using LinearAlgebra
 using StaticArrays
 using OrderedCollections
+using Printf
 using DocStringExtensions
 
 include("type.jl")
