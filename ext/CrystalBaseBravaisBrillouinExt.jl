@@ -20,7 +20,7 @@ function Brillouin.KPathInterpolant(kpath::CrystalBase.KPath)
         push!(kpaths, Vector{Vec3{Float64}}(points))
         push!(labels, Dict(i => Symbol(l) for (i, l) in ticks))
     end
-    basis = Bravais.ReciprocalBasis(lattice_vectors(kpath.recip_lattice))
+    basis = Bravais.ReciprocalBasis(vec3(kpath.recip_lattice))
     return Brillouin.KPathInterpolant(kpaths, labels, basis, Ref(Brillouin.LATTICE))
 end
 

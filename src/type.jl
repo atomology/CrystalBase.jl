@@ -16,7 +16,8 @@ Convert input to Vec3-compatible representation.
 
 - For a vector input `v`, convert to `Vec3`.
 - For separate `x`, `y`, `z` inputs, convert to `Vec3`.
-- For a matrix input `A`, return a `Vec3` of column vectors.
+- For a matrix input `A`, return a `Vec3` of its column vectors, e.g. the
+  lattice vectors of a lattice matrix (each column is a lattice vector).
 
 !!! note
 

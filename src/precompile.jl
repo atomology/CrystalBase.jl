@@ -24,9 +24,7 @@ using PrecompileTools: @setup_workload, @compile_workload
 
         reciprocal_lattice(lattice)
         real_lattice(recip_lattice)
-        lattice_vectors(lattice)
-        reciprocal_lattice_vectors(lattice)
-        real_lattice_vectors(recip_lattice)
+        vec3(lattice)
         frac_to_cart(lattice, frac_positions)
         cart_to_frac(lattice, frac_to_cart(lattice, frac_positions))
 

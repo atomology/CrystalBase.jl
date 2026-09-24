@@ -13,7 +13,7 @@ number, so per-site labels (`Fe1`/`Fe2`) do not split the symmetry.
 """
 function Spglib.Cell(crystal::Crystal)
     return Spglib.Cell(
-        lattice_vectors(crystal.lattice), Vector.(crystal.atom_positions), crystal.atom_numbers
+        vec3(crystal.lattice), Vector.(crystal.atom_positions), crystal.atom_numbers
     )
 end
 

@@ -35,16 +35,9 @@ julia> recip_lattice = reciprocal_lattice(lattice)
  0.0      3.14159  0.0
  0.0      0.0      2.0944
 
-# Get the lattice vectors, which are the columns of the matrix
-julia> lattice_vectors(recip_lattice)
-3-element Vector{StaticArraysCore.SVector{3, Float64}}:
- [6.283185307179586, 0.0, 0.0]
- [0.0, 3.141592653589793, 0.0]
- [0.0, 0.0, 2.0943951023931953]
-
-# Or a convenience function to directly get the vectors
-julia> reciprocal_lattice_vectors(a1, a2, a3)
-3-element Vector{StaticArraysCore.SVector{3, Float64}}:
+# Split the matrix into its columns, the lattice vectors
+julia> vec3(recip_lattice)
+3-element StaticArraysCore.SVector{3, StaticArraysCore.SVector{3, Float64}} with indices SOneTo(3):
  [6.283185307179586, 0.0, 0.0]
  [0.0, 3.141592653589793, 0.0]
  [0.0, 0.0, 2.0943951023931953]
