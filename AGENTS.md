@@ -10,11 +10,22 @@
 - While iterating, run focused tests with `julia --project=test test/runtests.jl <test file name>...`.
   - Example: `julia --project=test test/runtests.jl type.jl`.
 - This repo uses separate projects for `test` and `docs`; use the matching `--project` flag when needed.
+- Formatting is Runic, run through pre-commit. Run it on the files you touched only,
+  `pre-commit run --files <files>`, not `--all-files`.
 
 ## Testing
 - Run the full package test suite from the repo root with `julia --project -e 'using Pkg; Pkg.test()'`.
 - If you change docs content or public APIs, also verify the docs build with `julia --project=docs docs/make.jl`.
+- Tests run through TestItemRunner: write new tests as `@testitem` blocks, not bare `@testset`.
+- Doctests (`jldoctest`) run only in the full suite; a filtered `runtests.jl <file>` run skips them.
+  To regenerate their output, temporarily uncomment `fix=true` in the `doctest` call of `test/runtests.jl`.
 - In tests, call non-exported APIs with module qualification, for example `CrystalBase.coupled_axes(...)`.
+
+## Conventions
+- A lattice is a 3×3 matrix whose **columns** are the lattice vectors, in Å.
+- A reciprocal lattice has the reciprocal lattice vectors as columns, in Å⁻¹,
+  and includes the 2π factor: `recip_lattice = 2π * inv(lattice)'`.
+- Fractional coordinates are relative to those columns: `cart = lattice * frac`.
 
 ## Naming
 - Exported names use full words, no Unicode. Functions are verbs (with `!`
@@ -36,6 +47,10 @@
 - Overload an existing function by argument type rather than coining an
   input-output noun pair: `atomic_symbol(14)` and `atomic_symbol("Fe1")`,
   not `label_symbol`.
+- Internal names (unexported helpers, struct fields, function bodies) may be
+  shorter: community-standard abbreviations are fine, and Unicode (`Γ`, `k₁`)
+  is fine inside function bodies. Unicode never appears in exported names or
+  file names.
 - Renames of exported names require prior approval.
 
 ## Code Style
@@ -48,9 +63,7 @@
 
 ## PR checklist
 - Recommended PR title format: `<short summary>`
-- Ensure CI-equivalent checks pass locally:
-  - Package tests
-  - Docs build when docs/public APIs changed
+- Run the checks under Testing before opening the PR.
 - Keep changes focused; avoid unrelated refactors in the same PR.
 - Summarize user-visible API changes in PR description and update README/docs examples when relevant.
 - Confirm examples and snippets still run when changing user-facing API behavior.
