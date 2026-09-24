@@ -245,12 +245,15 @@ end
 """
     $(SIGNATURES)
 
-Convert an integer `0 <= i <= 9` to its subscript character, e.g. `1 -> ₁`.
+Subscript form of a string of decimal digits or of a non-negative integer,
+e.g. `"10" -> "₁₀"`, `2 -> "₂"`.
 """
-function _subscript(i::Integer)
-    @assert 0 <= i <= 9
-    return Char(0x2080 + i)
+function _subscript(digits::AbstractString)
+    all(isdigit, digits) || throw(ArgumentError("\"$digits\" is not a string of decimal digits"))
+    return map(c -> Char(0x2080 + (c - '0')), digits)
 end
+
+_subscript(i::Integer) = _subscript(string(i))
 
 """
     $(SIGNATURES)

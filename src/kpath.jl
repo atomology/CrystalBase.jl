@@ -1,6 +1,6 @@
 export Subpath, KPath
 export kpoints, kpoints_cart, cumulative_distances, ticks, n_kpoints
-export resample, unicode_kpoint_labels, unicode_kpoint_labels!
+export resample, unicode_kpoint_labels
 
 # A k-point path is stored as polylines: subpaths of vertices with
 # per-segment division counts. The dense k-point list, the plot axis and the
@@ -421,16 +421,6 @@ const _UNICODE_LABELS = Dict(
     "DELTA" => "Δ",
     "LAMBDA" => "Λ",
     "SIGMA" => "Σ",
-    "0" => "₀",
-    "1" => "₁",
-    "2" => "₂",
-    "3" => "₃",
-    "4" => "₄",
-    "5" => "₅",
-    "6" => "₆",
-    "7" => "₇",
-    "8" => "₈",
-    "9" => "₉",
 )
 
 """
@@ -439,8 +429,12 @@ const _UNICODE_LABELS = Dict(
     unicode_kpoint_labels(kpath)
 
 Convert high-symmetry k-point labels to Unicode: `GAMMA` → `Γ`, and a
-`_n` suffix to a subscript. For a [`KPath`](@ref) a new path is returned;
-see [`unicode_kpoint_labels!`](@ref) to convert in place.
+`_n` suffix of decimal digits to a subscript (`X_10` → `X₁₀`); any other
+suffix is kept as is (`X_a` → `X_a`). For a [`KPath`](@ref) a new path with
+converted labels is returned, e.g. `kpath = unicode_kpoint_labels(kpath)`.
+
+Labels are stored and printed as given; convert them once to get Unicode in
+the REPL and in [`ticks`](@ref).
 
 # Examples
 ```jldoctest unicode_kpoint_labels; setup = :(using CrystalBase)
@@ -455,11 +449,10 @@ unicode_kpoint_labels(["GAMMA", "DELTA_0", "LAMBDA_1", "SIGMA_2", "X"])
 ```
 """
 function unicode_kpoint_labels(label::AbstractString)
-    if occursin("_", label)
-        base, sub = split(label, "_"; limit = 2)
-        return get(_UNICODE_LABELS, base, base) * get(_UNICODE_LABELS, sub, sub)
-    end
-    return get(_UNICODE_LABELS, label, String(label))
+    occursin("_", label) || return get(_UNICODE_LABELS, label, String(label))
+    base, sub = split(label, "_"; limit = 2)
+    base = get(_UNICODE_LABELS, base, String(base))
+    return !isempty(sub) && all(isdigit, sub) ? base * _subscript(sub) : base * "_" * sub
 end
 
 unicode_kpoint_labels(labels::AbstractVector{<:AbstractString}) = map(unicode_kpoint_labels, labels)
@@ -470,18 +463,6 @@ function unicode_kpoint_labels(kpath::KPath{T}) where {T}
             for sp in kpath.subpaths
     ]
     return KPath{T}(kpath.recip_lattice, subpaths)
-end
-
-"""
-    $(SIGNATURES)
-
-Convert the labels of `kpath` to Unicode in place, see [`unicode_kpoint_labels`](@ref).
-"""
-function unicode_kpoint_labels!(kpath::KPath)
-    for sp in kpath.subpaths
-        map!(unicode_kpoint_labels, sp.labels, sp.labels)
-    end
-    return kpath
 end
 
 # ---------------------------------------------------------------------------
@@ -514,10 +495,9 @@ const _SHOW_CORNERS_LIMIT = 12
 # the list is short, tick form otherwise. `offset` shifts tick indices to the
 # global k-point numbering.
 function _describe(io::IO, sp::Subpath, offset::Integer = 0)
-    labels = get(io, :unicode, true) ? unicode_kpoint_labels(sp.labels) : sp.labels
     m = length(sp.vertices)
-    if all(!isempty, labels) && m <= _SHOW_CORNERS_LIMIT
-        print(io, join(labels, "—"))
+    if all(!isempty, sp.labels) && m <= _SHOW_CORNERS_LIMIT
+        print(io, join(sp.labels, "—"))
         isempty(sp.divisions) || print(io, "  divisions ", join(sp.divisions, " "))
     else
         print(io, n_kpoints(sp), " kpoints")
@@ -525,7 +505,7 @@ function _describe(io::IO, sp::Subpath, offset::Integer = 0)
         if isempty(ticks)
             print(io, ", no ticks")
         else
-            print(io, "  ticks ", join((string(unicode_kpoint_labels(l), "@", i + offset) for (i, l) in ticks), " "))
+            print(io, "  ticks ", join((string(l, "@", i + offset) for (i, l) in ticks), " "))
         end
     end
     return

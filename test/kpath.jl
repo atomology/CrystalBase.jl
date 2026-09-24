@@ -212,8 +212,10 @@ end
     kp_unicode = unicode_kpoint_labels(kp)
     @test ticks(kp_unicode).labels == ["Γ", "X₁"]
     @test ticks(kp).labels == ["GAMMA", "X_1"]
-    unicode_kpoint_labels!(kp)
-    @test ticks(kp).labels == ["Γ", "X₁"]
+    # multi-digit subscripts; other suffixes are kept verbatim
+    @test unicode_kpoint_labels(["X_10", "GAMMA_12", "X_a", "X_"]) == ["X₁₀", "Γ₁₂", "X_a", "X_"]
+    @test CrystalBase._subscript(3) == "₃"
+    @test_throws ArgumentError CrystalBase._subscript("1a")
 end
 
 @testitem "isapprox for KPath" begin
@@ -252,10 +254,10 @@ end
     unlabeled = KPath(KPathEnv.recip_lattice, KPathEnv.kpoints; break_tol = 0)
     @test occursin("27 kpoints, no ticks", sprint(show, MIME("text/plain"), unlabeled))
 
-    # labels are displayed in unicode
+    # labels are displayed as stored; convert explicitly for unicode
     gamma = KPath(KPathEnv.recip_lattice, [["GAMMA" => [0.0, 0.0, 0.0], "X" => [0.5, 0.0, 0.5]]])
-    @test occursin("Γ—X", sprint(show, MIME("text/plain"), gamma))
-    @test occursin("GAMMA—X", sprint(show, MIME("text/plain"), gamma; context = :unicode => false))
+    @test occursin("GAMMA—X", sprint(show, MIME("text/plain"), gamma))
+    @test occursin("Γ—X", sprint(show, MIME("text/plain"), unicode_kpoint_labels(gamma)))
 end
 
 @testitem "KPath from Crystal" begin
