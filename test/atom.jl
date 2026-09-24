@@ -11,15 +11,17 @@ end
     @test atomic_symbol(0) == "X"
 end
 
-@testitem "label_symbol" begin
-    @test label_symbol("Fe1") == "Fe"
-    @test label_symbol("O") == "O"
-    @test label_symbol("Co") == "Co"
-    @test label_symbol("C1") == "C"
-    @test label_symbol("Cl_dn") == "Cl"
-    @test label_symbol("X1") == "X"
-    @test_throws ArgumentError label_symbol("Zz")
-    @test_throws ArgumentError label_symbol("")
+@testitem "atomic_symbol of labels" begin
+    @test atomic_symbol("Fe1") == "Fe"
+    @test atomic_symbol("O") == "O"
+    @test atomic_symbol("Co") == "Co"
+    @test atomic_symbol("C1") == "C"
+    @test atomic_symbol("Cl_dn") == "Cl"
+    @test atomic_symbol("X1") == "X"
+    @test_throws ArgumentError atomic_symbol("Zz")
+    @test_throws ArgumentError atomic_symbol("")
+    @test atomic_symbol(:Fe2) == "Fe"
+    @test atomic_symbol(["Fe1", "O2"]) == ["Fe", "O"]
 end
 
 @testitem "formula" begin

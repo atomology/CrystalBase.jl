@@ -50,7 +50,18 @@ const DUMMY_SYMBOL = "X"
 """
     $(SIGNATURES)
 
-Get atomic symbol from number. `0` maps to the dummy symbol `"X"`.
+Get the atomic symbol of an atomic number or of a species label.
+
+A number maps to its element; `0` maps to the dummy symbol `"X"`.
+
+A species label starts with an element symbol optionally followed by a
+disambiguating suffix (`Fe1`, `Fe_up`, `Fe3+`); its leading element symbol is
+returned. The longest valid prefix wins, so two-letter symbols are preferred
+over one (`"Co"` is cobalt, not carbon). The dummy symbol `"X"` (atomic number
+0) is accepted, so `"X1"` labels a site of a synthetic model. Throws
+`ArgumentError` if the label does not begin with a known element.
+
+A vector is mapped elementwise.
 
 # Examples
 ```jldoctest atomic_symbol; setup = :(using CrystalBase)
@@ -66,39 +77,15 @@ atomic_symbol([14, 8])
  "Si"
  "O"
 ```
-"""
-function atomic_symbol(number::Integer)
-    return atomic_symbol([number])[1]
-end
 
-function atomic_symbol(numbers::AbstractVector)
-    return [n == 0 ? DUMMY_SYMBOL : elements[n].symbol for n in numbers]
-end
-
-export label_symbol, formula
-
-"""
-    $(SIGNATURES)
-
-Element symbol at the head of a species label, e.g. `"Fe1"` → `"Fe"`.
-
-A species label starts with an element symbol optionally followed by a
-disambiguating suffix (`Fe1`, `Fe_up`, `Fe3+`). The longest valid prefix wins,
-so two-letter symbols are preferred over one (`"Co"` is cobalt, not carbon).
-The dummy symbol `"X"` (atomic number 0) is accepted, so `"X1"` labels a
-site of a synthetic model.
-
-Throws `ArgumentError` if the label does not begin with a known element.
-
-# Examples
-```jldoctest label_symbol; setup = :(using CrystalBase)
-label_symbol("Fe1")
+```jldoctest atomic_symbol
+atomic_symbol("Fe1")
 # output
 "Fe"
 ```
 
-```jldoctest label_symbol
-label_symbol.(["Si", "O2", "Cl_dn"])
+```jldoctest atomic_symbol
+atomic_symbol(["Si", "O2", "Cl_dn"])
 # output
 3-element Vector{String}:
  "Si"
@@ -106,7 +93,11 @@ label_symbol.(["Si", "O2", "Cl_dn"])
  "Cl"
 ```
 """
-function label_symbol(label::AbstractString)
+function atomic_symbol(number::Integer)
+    return number == 0 ? DUMMY_SYMBOL : elements[number].symbol
+end
+
+function atomic_symbol(label::Union{AbstractString, Symbol})
     s = String(label)
     for width in (2, 1)
         ncodeunits(s) >= width || continue
@@ -115,6 +106,12 @@ function label_symbol(label::AbstractString)
     end
     throw(ArgumentError("label \"$label\" does not begin with a known element symbol"))
 end
+
+function atomic_symbol(xs::AbstractVector)
+    return String[atomic_symbol(x) for x in xs]
+end
+
+export formula
 
 """
     $(SIGNATURES)

@@ -10,7 +10,7 @@ A crystal structure: lattice plus atoms.
 Element identity (`atom_numbers`) and per-site identity (`atom_labels`) are
 stored separately. Labels default to the element symbol; a refined label such
 as `Fe1`/`Fe2` distinguishes symmetry-inequivalent sites of the same element.
-Every label must begin with the symbol of its element, see [`label_symbol`](@ref).
+Every label must begin with the symbol of its element, see [`atomic_symbol`](@ref).
 
 # Fields
 $(FIELDS)
@@ -40,7 +40,7 @@ struct Crystal{T <: Real}
         length(atom_labels) == n ||
             throw(DimensionMismatch("atom_labels has $(length(atom_labels)) entries, expected $n"))
         for (z, label) in zip(atom_numbers, atom_labels)
-            symbol = label_symbol(label)
+            symbol = atomic_symbol(label)
             atomic_number(symbol) == z || throw(
                 ArgumentError("label \"$label\" starts with $symbol, but the site is $(atomic_symbol(z))")
             )
@@ -103,7 +103,7 @@ function Crystal(
         atom_positions::AbstractVector,
         atom_labels::AbstractVector{<:Union{AbstractString, Symbol}},
     )
-    atom_numbers = Int[atomic_number(label_symbol(string(l))) for l in atom_labels]
+    atom_numbers = Int[atomic_number(atomic_symbol(l)) for l in atom_labels]
     return Crystal(lattice, atom_positions, atom_numbers, atom_labels)
 end
 

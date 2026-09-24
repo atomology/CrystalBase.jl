@@ -34,7 +34,8 @@ using PrecompileTools: @setup_workload, @compile_workload
         atomic_number(["Si", "O"])
         atomic_symbol(14)
         atomic_symbol([14, 8])
-        label_symbol("Fe1")
+        atomic_symbol("Fe1")
+        atomic_symbol(["Fe1", "O2"])
         formula(["Si", "O", "O"])
 
         crystal = Crystal(lattice, frac_positions, ["Si", "Si"])
