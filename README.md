@@ -17,55 +17,64 @@ in other packages.
 
 ### Real and reciprocal lattice vectors
 
+Lattices are 3 × 3 matrices whose **columns** are the lattice vectors.
+
 ```julia
 julia> using CrystalBase
 
-# Define a matrix for lattice vectors
-julia> a1, a2, a3 = [1.0, 0.0, 0.0], [0.0, 2.0, 0.0], [0.0, 0.0, 3.0]
+# Stack the lattice vectors as columns
+julia> a1, a2, a3 = [1.0, 0.0, 0.0], [1.0, 2.0, 0.0], [0.0, 0.0, 3.0]
 julia> lattice = mat3(a1, a2, a3)
 3×3 StaticArraysCore.SMatrix{3, 3, Float64, 9} with indices SOneTo(3)×SOneTo(3):
- 1.0  0.0  0.0
+ 1.0  1.0  0.0
  0.0  2.0  0.0
  0.0  0.0  3.0
 
-# Compute the reciprocal lattice (as a matrix)
+julia> lattice[:, 2] == a2
+true
+
+# Compute the reciprocal lattice, again one vector per column
 julia> recip_lattice = reciprocal_lattice(lattice)
 3×3 StaticArraysCore.SMatrix{3, 3, Float64, 9} with indices SOneTo(3)×SOneTo(3):
- 6.28319  0.0      0.0
- 0.0      3.14159  0.0
- 0.0      0.0      2.0944
+  6.28319  0.0      0.0
+ -3.14159  3.14159  0.0
+  0.0      0.0      2.0944
 
-# Split the matrix into its columns, the lattice vectors
-julia> vec3(recip_lattice)
+# Split the matrix into its columns, the reciprocal lattice vectors
+julia> b1, b2, b3 = vec3(recip_lattice)
 3-element StaticArraysCore.SVector{3, StaticArraysCore.SVector{3, Float64}} with indices SOneTo(3):
- [6.283185307179586, 0.0, 0.0]
+ [6.283185307179586, -3.141592653589793, 0.0]
  [0.0, 3.141592653589793, 0.0]
  [0.0, 0.0, 2.0943951023931953]
 
-# Compute the real-space lattice vectors
-julia> real_lattice(recip_lattice)
-3×3 StaticArraysCore.SMatrix{3, 3, Float64, 9} with indices SOneTo(3)×SOneTo(3):
- 1.0  0.0  0.0
- 0.0  2.0  0.0
- 0.0  0.0  3.0
+# aᵢ ⋅ bⱼ = 2π δᵢⱼ
+julia> [a1 a2 a3]' * b1
+3-element StaticArraysCore.SVector{3, Float64} with indices SOneTo(3):
+ 6.283185307179586
+ 0.0
+ 0.0
+
+# Compute the real-space lattice back
+julia> real_lattice(recip_lattice) ≈ lattice
+true
 ```
 
 ### Fractional to Cartesian coordinates interconversion
 
 ```julia
-julia> lattice = mat3([1.0, 0.0, 0.0], [0.0, 2.0, 0.0], [0.0, 0.0, 3.0])
+# Fractional coordinates weight the columns: 0.5 a1 + 0.5 a2 + 0.5 a3
 julia> frac_coords = [0.5, 0.5, 0.5]
 julia> cart_coords = frac_to_cart(lattice, frac_coords)
 3-element StaticArraysCore.SVector{3, Float64} with indices SOneTo(3):
- 0.5
+ 1.0
  1.0
  1.5
 
 # Also support multiple coordinates at once
-julia> frac_to_cart(lattice, [cart_coords, cart_coords])
+julia> frac_to_cart(lattice, [frac_coords, [0.0, 1.0, 0.0]])
 2-element Vector{StaticArraysCore.SVector{3, Float64}}:
- [0.5, 2.0, 4.5]
- [0.5, 2.0, 4.5]
+ [1.0, 1.0, 1.5]
+ [1.0, 2.0, 0.0]
 
 # Convert back to fractional coordinates
 julia> cart_to_frac(lattice, cart_coords)
