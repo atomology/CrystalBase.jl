@@ -39,6 +39,10 @@
 - Prefixes and suffixes always take `_`, and a joined term stays whole:
   `n_atoms`, `n_kpoints`, `kpoints_cart`, `atom_positions_cart`.
   Predicates are the exception and join, as in Base (`isempty`, `haskey`).
+- Type names capitalize each word as written in prose: `SpaceGroup`,
+  `LittleGroup` (two words, as in Crystalline.jl, even though the functions
+  are `spacegroup`, `littlegroup`), `Subpath` (one word), `KPath` (the
+  symbol `k` plus "path", as in Brillouin.jl).
 - `cart` / `frac` — Cartesian (Å, Å⁻¹) / fractional (lattice-relative)
   coordinates; every position-like name says which it is when both exist.
 - Conversions between two representations of the same quantity are
