@@ -108,10 +108,8 @@ end
     @test n_kpoints(kp) == 27
     @test all(isapprox.(kpoints(kp), KPathEnv.kpoints; atol = 1.0e-5))
     @test kpoints_cart(kp) ≈ frac_to_cart(KPathEnv.recip_lattice, KPathEnv.kpoints) atol = 1.0e-5
-    @test tick_labels(kp) == KPathEnv.labels
-    @test tick_indices(kp) == KPathEnv.indices
-    @test all(isapprox.(axis(kp), KPathEnv.x; atol = 1.0e-5))
-    @test tick_positions(kp) ≈ KPathEnv.x[KPathEnv.indices] atol = 1.0e-5
+    @test ticks(kp) == (; indices = KPathEnv.indices, labels = KPathEnv.labels)
+    @test all(isapprox.(cumulative_distances(kp), KPathEnv.x; atol = 1.0e-5))
 
     # The default 100 points/segment should return 511 kpoints as in
     # `WannierDatasets/datasets/Si2/outputs/MDRS/Si2_band.kpt`
@@ -136,9 +134,9 @@ end
     @test length(kp.subpaths) == 2
     @test kp.subpaths[1].labels == ["L", "G", "X"]
     @test kp.subpaths[2].labels == ["X", "K", "G"]
-    @test tick_labels(kp) == ["L", "G", "X|X", "K", "G"]
+    @test ticks(kp).labels == ["L", "G", "X|X", "K", "G"]
 
-    # Two disconnected segments: A->B and C->D, axis is flat across the break
+    # Two disconnected segments: A->B and C->D, distance is flat across the break
     kpoint_path = [
         ["A" => [0.0, 0.0, 0.0], "B" => [1.0, 0.0, 0.0]],
         ["C" => [0.0, 0.0, 0.0], "D" => [0.0, 2.0, 0.0]],
@@ -146,12 +144,11 @@ end
     kp = KPath(recip_lattice, kpoint_path; n_points_first_segment = 5)
     @test [sp.divisions for sp in kp.subpaths] == [[5], [10]]
     @test n_kpoints(kp) == 17
-    @test tick_indices(kp) == [1, 6, 17]
-    @test tick_labels(kp) == ["A", "B|C", "D"]
-    @test tick_indices(kp; merge = false) == [1, 6, 7, 17]
-    @test tick_labels(kp; merge = false) == ["A", "B", "C", "D"]
-    @test tick_positions(kp; merge = false) ≈ [0.0, 1.0, 1.0, 3.0]
-    x = axis(kp)
+    @test ticks(kp) == (; indices = [1, 6, 17], labels = ["A", "B|C", "D"])
+    unmerged = ticks(kp; merge = false)
+    @test unmerged == (; indices = [1, 6, 7, 17], labels = ["A", "B", "C", "D"])
+    x = cumulative_distances(kp)
+    @test x[unmerged.indices] ≈ [0.0, 1.0, 1.0, 3.0]
     @test x[6] ≈ 1.0
     @test x[7] ≈ 1.0
     @test x[end] ≈ 3.0
@@ -163,9 +160,8 @@ end
     @test length(kp.subpaths) == 1
     @test all(sp -> all(==(1), sp.divisions), kp.subpaths)
     @test kpoints(kp) == KPathEnv.kpoints
-    @test tick_indices(kp) == KPathEnv.indices
-    @test tick_labels(kp) == KPathEnv.labels
-    @test all(isapprox.(axis(kp), KPathEnv.x; atol = 1.0e-5))
+    @test ticks(kp) == (; indices = KPathEnv.indices, labels = KPathEnv.labels)
+    @test all(isapprox.(cumulative_distances(kp), KPathEnv.x; atol = 1.0e-5))
 
     # per-point labels keyword gives the same path
     full_labels = fill("", length(KPathEnv.kpoints))
@@ -180,13 +176,13 @@ end
     )
     dense = KPath(KPathEnv.recip_lattice, kpoints(route), [1, 5, 6, 10], ["A", "B", "C", "D"])
     @test length(dense.subpaths) == 2
-    @test tick_labels(dense) == ["A", "B|C", "D"]
-    @test axis(dense) ≈ axis(route)
+    @test ticks(dense).labels == ["A", "B|C", "D"]
+    @test cumulative_distances(dense) ≈ cumulative_distances(route)
 
     # Geometric break detection without labels
     geometric = KPath(KPathEnv.recip_lattice, kpoints(route))
     @test length(geometric.subpaths) == 2
-    @test all(isempty, tick_labels(geometric))
+    @test all(isempty, ticks(geometric).labels)
     @test length(KPath(KPathEnv.recip_lattice, kpoints(route); break_tol = 0).subpaths) == 1
 
     @test_throws DimensionMismatch KPath(KPathEnv.recip_lattice, KPathEnv.kpoints; labels = ["G"])
@@ -214,10 +210,10 @@ end
         ["Γ", "Δ₀", "Λ₁", "Σ₂", "X", ""]
     kp = KPath(Matrix{Float64}(I, 3, 3), [["GAMMA" => [0.0, 0.0, 0.0], "X_1" => [0.5, 0.0, 0.0]]])
     kp_unicode = unicode_kpoint_labels(kp)
-    @test tick_labels(kp_unicode) == ["Γ", "X₁"]
-    @test tick_labels(kp) == ["GAMMA", "X_1"]
+    @test ticks(kp_unicode).labels == ["Γ", "X₁"]
+    @test ticks(kp).labels == ["GAMMA", "X_1"]
     unicode_kpoint_labels!(kp)
-    @test tick_labels(kp) == ["Γ", "X₁"]
+    @test ticks(kp).labels == ["Γ", "X₁"]
 end
 
 @testitem "isapprox for KPath" begin
@@ -286,7 +282,7 @@ end
         "X" => [0.5, 0.0, 0.5],
         "Γ" => [0.0, 0.0, 0.0],
     )
-    @test tick_labels(kp) == ["Γ", "X", "U|K", "Γ", "L", "W", "X"]
+    @test ticks(kp).labels == ["Γ", "X", "U|K", "Γ", "L", "W", "X"]
 end
 
 @testitem "Brillouin interop" setup = [KPathEnv] begin
@@ -297,11 +293,11 @@ end
 
     @test all(isapprox.(kpi, kpoints(kp); atol = 1.0e-5))
     @test mat3(kpi.basis) == kp.recip_lattice
-    @test kpi.labels[1] == Dict(i => Symbol(l) for (i, l) in zip(tick_indices(kp), tick_labels(kp)))
+    @test kpi.labels[1] == Dict(i => Symbol(l) for (i, l) in zip(ticks(kp)...))
 
     # round trip through the interpolant gives the verbatim path
     back = KPath(kpi)
-    @test back ≈ KPath(KPathEnv.recip_lattice, kpoints(kp), tick_indices(kp), tick_labels(kp))
+    @test back ≈ KPath(KPathEnv.recip_lattice, kpoints(kp), ticks(kp)...)
 
     # two disconnected lines map to two subpaths
     kp2 = KPath(

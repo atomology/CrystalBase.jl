@@ -117,8 +117,8 @@ julia> kgrid_from_density(si, 3.0)
 ### K-point paths in the Brillouin zone
 
 A `KPath` stores polylines: connected `Subpath`s of labeled vertices with a
-division count per segment. The dense k-points, the plot axis and the ticks
-are derived on demand.
+division count per segment. The dense k-points, their cumulative distances
+(the x axis of a band plot) and the ticks are derived on demand.
 
 ```julia
 # From wannier90-style segments; divisions follow `bands_num_points`
@@ -139,8 +139,14 @@ julia> kpoints(kp)[1:3]
  [0.1, 0.0, 0.1]
  [0.2, 0.0, 0.2]
 
-julia> axis(kp), tick_indices(kp), tick_labels(kp)
-([0.0, 0.2314, …], [1, 6, 8], ["Γ", "X", "U"])
+julia> cumulative_distances(kp)[1:3]
+3-element Vector{Float64}:
+ 0.0
+ 0.23142487319261829
+ 0.46284974638523657
+
+julia> ticks(kp)
+(indices = [1, 6, 8], labels = ["Γ", "X", "U"])
 
 # Wrap an explicit k-point list verbatim (e.g. from wannier90 band.kpt + labelinfo)
 julia> KPath(recip_lattice, kpoints(kp), [1, 6, 8], ["Γ", "X", "U"])

@@ -1,5 +1,5 @@
 export Subpath, KPath
-export kpoints, kpoints_cart, axis, tick_indices, tick_labels, tick_positions, n_kpoints
+export kpoints, kpoints_cart, cumulative_distances, ticks, n_kpoints
 export resample, unicode_kpoint_labels, unicode_kpoint_labels!
 
 # A k-point path is stored as polylines: subpaths of vertices with
@@ -90,8 +90,8 @@ A k-point path in the Brillouin zone, stored as polylines, one per [`Subpath`](@
 
 Vertices within a subpath are connected; consecutive subpaths are separated
 by a discontinuity. The dense k-point list ([`kpoints`](@ref)), the
-cumulative plot axis ([`axis`](@ref)) and the high-symmetry ticks
-([`tick_indices`](@ref), [`tick_labels`](@ref)) are derived on access.
+cumulative distances of the plot axis ([`cumulative_distances`](@ref)) and
+the high-symmetry [`ticks`](@ref) are derived on access.
 
 # Fields
 $(FIELDS)
@@ -372,11 +372,12 @@ kpoints_cart(kpath::KPath) = frac_to_cart(kpath.recip_lattice, kpoints(kpath))
 """
     $(SIGNATURES)
 
-Cumulative Cartesian distance (Å⁻¹) along the path, one value per k-point,
-held flat across discontinuities between subpaths. This is the x axis of a
-band-structure plot.
+Cumulative Cartesian distance (Å⁻¹) from the first k-point along the path,
+one value per k-point, held flat across discontinuities between subpaths.
+This is the x axis of a band-structure plot; the ticks sit at
+`cumulative_distances(kpath)[ticks(kpath).indices]`.
 """
-function axis(kpath::KPath{T}) where {T}
+function cumulative_distances(kpath::KPath{T}) where {T}
     points, _, breaks = _sample(kpath)
     cart = frac_to_cart(kpath.recip_lattice, points)
     x = zeros(T, length(cart))
@@ -386,52 +387,30 @@ function axis(kpath::KPath{T}) where {T}
     return x
 end
 
-# Ticks with labels straddling a break merged into "A|B".
-function _merged_ticks(kpath::KPath)
-    _, ticks, breaks = _sample(kpath)
+"""
+    ticks(kpath; merge = true) -> (; indices, labels)
+
+High-symmetry ticks of the path: `indices` into [`kpoints`](@ref) of the
+labeled vertices, and their `labels`.
+
+With `merge = true` two labeled points straddling a discontinuity share one
+tick, labeled `A|B`, as a band plot draws them. With `merge = false` every
+labeled vertex is its own tick, the layout of wannier90 `labelinfo.dat`.
+"""
+function ticks(kpath::KPath; merge::Bool = true)
+    _, vertex_ticks, breaks = _sample(kpath)
     indices = Int[]
     labels = String[]
-    for (idx, label) in ticks
-        if !isempty(indices) && idx == indices[end] + 1 && idx in breaks
+    for (idx, label) in vertex_ticks
+        if merge && !isempty(indices) && idx == indices[end] + 1 && idx in breaks
             labels[end] = labels[end] * "|" * label
         else
             push!(indices, idx)
             push!(labels, label)
         end
     end
-    return indices, labels
+    return (; indices, labels)
 end
-
-"""
-    tick_indices(kpath; merge = true)
-
-Indices into [`kpoints`](@ref) of the labeled vertices.
-
-With `merge = true` two labeled points straddling a discontinuity share one
-tick, labeled `A|B`, as a band plot draws them. With `merge = false` every
-labeled vertex is its own tick, the layout of wannier90 `labelinfo.dat`.
-"""
-tick_indices(kpath::KPath; merge::Bool = true) = _ticks(kpath, merge)[1]
-
-"""
-    tick_labels(kpath; merge = true)
-
-Labels of the ticks, aligned with [`tick_indices`](@ref).
-"""
-tick_labels(kpath::KPath; merge::Bool = true) = _ticks(kpath, merge)[2]
-
-function _ticks(kpath::KPath, merge::Bool)
-    merge && return _merged_ticks(kpath)
-    ticks = _sample(kpath)[2]
-    return first.(ticks), last.(ticks)
-end
-
-"""
-    tick_positions(kpath; merge = true)
-
-Position of each tick on [`axis`](@ref).
-"""
-tick_positions(kpath::KPath; merge::Bool = true) = axis(kpath)[tick_indices(kpath; merge)]
 
 # ---------------------------------------------------------------------------
 # Labels
