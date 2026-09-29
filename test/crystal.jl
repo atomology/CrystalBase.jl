@@ -77,6 +77,15 @@ end
     @test occursin("a\u2081 = 0.0       2.715265  2.715265", s)
     @test occursin("Si  0.25  0.25  0.25", s)
     @test sprint(show, CrystalEnv.si) == "Crystal(Si2, 2 atoms)"
+
+    # a single atom, and a bare lattice without atoms
+    fe = Crystal(CrystalEnv.si.lattice, ["Fe" => [0.0, 0.0, 0.0]])
+    @test sprint(show, fe) == "Crystal(Fe, 1 atom)"
+    bare = Crystal(CrystalEnv.si.lattice, Vector{Float64}[], String[])
+    @test sprint(show, bare) == "Crystal(no atoms)"
+    shown = sprint(show, MIME"text/plain"(), bare)
+    @test startswith(shown, "Crystal{Float64}: no atoms\n")
+    @test endswith(shown, "\n  atoms (fractional): none")
 end
 
 @testitem "kgrid_from_density" setup = [CrystalEnv] begin

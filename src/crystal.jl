@@ -206,13 +206,21 @@ function Base.isapprox(a::Crystal, b::Crystal; kwargs...)
     return all(isapprox.(a.atom_positions, b.atom_positions; kwargs...))
 end
 
+# "Si2, 2 atoms", "Fe, 1 atom", or "no atoms" for a bare lattice
+function _describe_atoms(crystal::Crystal)
+    n = n_atoms(crystal)
+    n == 0 && return "no atoms"
+    return string(formula(crystal), ", ", n, n == 1 ? " atom" : " atoms")
+end
+
 function Base.show(io::IO, crystal::Crystal)
-    return print(io, "Crystal(", formula(crystal), ", ", n_atoms(crystal), " atoms)")
+    return print(io, "Crystal(", _describe_atoms(crystal), ")")
 end
 
 function Base.show(io::IO, ::MIME"text/plain", crystal::Crystal{T}) where {T}
-    println(io, "Crystal{$T}: ", formula(crystal), ", ", n_atoms(crystal), " atoms")
+    println(io, "Crystal{$T}: ", _describe_atoms(crystal))
     show_lattice(io, crystal.lattice; indent = "  ")
+    n_atoms(crystal) == 0 && return print(io, "  atoms (fractional): none")
     print(io, "  atoms (fractional):")
     width = maximum(length, crystal.atom_labels; init = 0)
     n = n_atoms(crystal)
