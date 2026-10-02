@@ -158,8 +158,9 @@ atom_symbols(crystal::Crystal) = atomic_symbol(crystal.atom_numbers)
 """
     $(SIGNATURES)
 
-Distinct labels in first-appearance order, e.g. `["Fe1", "Fe2", "O"]`.
-This is the `ATOMIC_SPECIES` set of a Quantum ESPRESSO input.
+The species of the crystal: its distinct labels in first-appearance order,
+e.g. `["Fe1", "Fe2", "O"]`. This is the `ATOMIC_SPECIES` set of a Quantum
+ESPRESSO input.
 """
 function unique_species(crystal::Crystal)
     species = String[]

@@ -50,11 +50,11 @@ const DUMMY_SYMBOL = "X"
 """
     $(SIGNATURES)
 
-Get the atomic symbol of an atomic number or of a species label.
+Get the atomic symbol of an atomic number or of a site label.
 
 A number maps to its element; `0` maps to the dummy symbol `"X"`.
 
-A species label starts with an element symbol optionally followed by a
+A label starts with an element symbol optionally followed by a
 disambiguating suffix (`Fe1`, `Fe_up`, `Fe3+`); its leading element symbol is
 returned. The longest valid prefix wins, so two-letter symbols are preferred
 over one (`"Co"` is cobalt, not carbon). The dummy symbol `"X"` (atomic number
