@@ -158,19 +158,19 @@ function formula(symbols::AbstractVector{<:AbstractString}; order::Symbol = :hil
         end
     end
     ordered = _formula_order(collect(keys(counts)), order)
-    return join(string(e, counts[e] > 1 ? counts[e] : "") for e in ordered)
+    return join(string(s, counts[s] > 1 ? counts[s] : "") for s in ordered)
 end
 
-function _formula_order(elements::Vector{String}, order::Symbol)
+function _formula_order(symbols::Vector{String}, order::Symbol)
     if order === :alpha
-        return sort(elements)
+        return sort(symbols)
     elseif order === :hill
-        if "C" in elements
+        if "C" in symbols
             head = ["C"]
-            "H" in elements && push!(head, "H")
-            return vcat(head, sort(filter(e -> e ∉ ("C", "H"), elements)))
+            "H" in symbols && push!(head, "H")
+            return vcat(head, sort(filter(s -> s ∉ ("C", "H"), symbols)))
         end
-        return sort(elements)
+        return sort(symbols)
     end
     throw(ArgumentError("unknown formula order: $order (expected :hill or :alpha)"))
 end

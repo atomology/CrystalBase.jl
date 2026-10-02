@@ -55,27 +55,26 @@
   shorter: community-standard abbreviations are fine, and Unicode (`Γ`, `k₁`)
   is fine inside function bodies. Unicode never appears in exported names or
   file names.
-- Atom identity uses three words, one per concept, never interchanged:
+- Atom identity uses three words, one per concept, never interchanged, in
+  their textbook meaning:
   - **element** — the chemical element, stored as its atomic number
     (`atomic_number`, `atom_numbers`) and written as its symbol
     (`atomic_symbol`, `atom_symbols`: `"Fe"`). Applied to an atom, "symbol"
     always means the element symbol; other symbols say what they are
-    (`international_symbol`). "Element" itself stays in prose: identifiers
-    name the representation (number or symbol), because the bare word also
-    means a group element or a matrix element.
-  - **label** — the per-site string: the element symbol, optionally refined
-    by a suffix (`Fe1`, `Fe_up`, `X1`), as CIF's `_atom_site_label`, the
-    `ATOMIC_POSITIONS` of Quantum ESPRESSO and the `atoms_frac` block of
-    wannier90 name sites. Per-site data
-    is always `atom_labels` (`labels` locally), never `species` or `names`;
-    two atoms are compared by label ("the same label").
-  - **species** — one distinct label, as a member of the set of a crystal's
-    distinct labels (`unique_species`). It is the set-level noun, as in the
-    literature and in QE's `ATOMIC_SPECIES`/`ntyp`/`ityp` and VASP's
-    species lines: an index into that set, its size, and anything keyed by
-    it (`Dict(species => ...)`, "per species") use it. Like QE and VASP,
-    `Fe1` and `Fe2` are two species of one element. (pymatgen's per-site
-    `site.species` is the one usage we do not follow.)
+    (`international_symbol`, the Hermann–Mauguin symbol). "Element" itself
+    stays in prose: identifiers name the representation (number or symbol),
+    because the bare word also means a group element or a matrix element.
+  - **label** — the per-site string, the crystallographic site label of
+    structure tables ("Fe1 at 4a"): the element symbol, optionally refined
+    by a suffix (`Fe1`, `Fe_up`, `X1`). Per-site data is always
+    `atom_labels` (`labels` locally), never `species` or `names`; two atoms
+    are compared by label ("the same label").
+  - **species** — a kind of atom: the sites sharing one label, as in "a
+    crystal of two atomic species". It is a set-level noun, never said of
+    one site's data: the set of a crystal's species (`unique_species`), an
+    index into it, its size, and anything keyed by it (`Dict(species =>
+    ...)`, "per species") use it. Two sites of one element with different
+    labels (`Fe1`, `Fe2`) are two species.
 
   `name` never refers to atoms.
 - Renames of exported names require prior approval.
