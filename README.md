@@ -152,7 +152,8 @@ julia> KPath(recip_lattice, kpoints(kp), [1, 6, 8], ["Γ", "X", "U"])
 # Change the sampling without touching the vertices
 julia> resample(kp; density = 50.0)
 
-# With `using Spglib, Brillouin`: the standard path of a crystal
+# With `using Spglib; import Brillouin` (not `using Brillouin`, which exports
+# its own `KPath`): the standard path of a crystal
 julia> KPath(si)
 KPath{Float64}: 2 subpaths, 451 kpoints
   ...
