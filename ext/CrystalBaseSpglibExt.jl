@@ -26,11 +26,6 @@ function CrystalBase.Crystal(cell::Spglib.Cell)
     return Crystal(Matrix(cell.lattice), cell.positions, Int.(cell.atoms))
 end
 
-function CrystalBase.spacegroup(crystal::Crystal; symprec::Real = 1.0e-5)
-    dataset = Spglib.get_dataset(Spglib.Cell(crystal), symprec)
-    return (; symbol = dataset.international_symbol, number = Int(dataset.spacegroup_number))
-end
-
 function CrystalBase.coupled_axes(crystal::Crystal; symprec::Real = 1.0e-5)
     dataset = Spglib.get_dataset(Spglib.Cell(crystal), symprec)
     # union-find over the three axes

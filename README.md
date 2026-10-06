@@ -106,10 +106,8 @@ julia> fe = Crystal(lattice, ["Fe1" => [0.0, 0.0, 0.0], "Fe2" => [0.5, 0.5, 0.5]
 julia> atom_symbols(fe), unique_species(fe)
 (["Fe", "Fe"], ["Fe1", "Fe2"])
 
-# With `using Spglib`: space group and symmetry-consistent k-point grids
+# With `using Spglib`: symmetry-consistent k-point grids
 julia> using Spglib
-julia> spacegroup(si)
-(symbol = "Fd-3m", number = 227)
 julia> kgrid_from_density(si, 3.0)
 (7, 7, 7)
 ```

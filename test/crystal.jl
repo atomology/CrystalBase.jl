@@ -101,14 +101,12 @@ end
     @test cell.atoms == [14, 14]
     @test Crystal(cell) ≈ si
 
-    @test spacegroup(si) == (symbol = "Fd-3m", number = 227)
     @test CrystalBase.coupled_axes(si) == [1, 1, 1]
     @test kgrid_from_density(si, 3.0) == (7, 7, 7)
 
     # body-centered tetragonal: the 4-fold rotation couples all three primitive
     # axes, so the anisotropic raw grid is raised to an isotropic one
     bct = Crystal([-2.0 2.0 2.0; 2.0 -2.0 2.0; 3.0 3.0 -3.0], [[0.0, 0.0, 0.0]], ["Fe"])
-    @test spacegroup(bct).number == 139
     @test kgrid_from_density(bct, 3.0; symmetrize = false) == (6, 6, 7)
     @test kgrid_from_density(bct, 3.0) == (7, 7, 7)
 
@@ -119,5 +117,5 @@ end
 
     # per-site labels do not split the symmetry
     fe = Crystal(CrystalEnv.lattice, ["Fe1" => [0.0, 0.0, 0.0], "Fe2" => [0.5, 0.5, 0.5]])
-    @test spacegroup(fe) == spacegroup(Crystal(CrystalEnv.lattice, [[0.0, 0.0, 0.0], [0.5, 0.5, 0.5]], ["Fe", "Fe"]))
+    @test Spglib.Cell(fe).atoms == [26, 26]
 end

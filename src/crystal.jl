@@ -1,6 +1,6 @@
 export Crystal
 export n_atoms, atom_symbols, unique_species, reduced_formula, atom_positions_cart
-export spacegroup, kgrid_from_density
+export kgrid_from_density
 
 """
     $(TYPEDEF)
@@ -235,15 +235,6 @@ function Base.show(io::IO, ::MIME"text/plain", crystal::Crystal{T}) where {T}
     n_shown < n && print(io, "\n    ⋮ (", n - n_shown, " more)")
     return
 end
-
-"""
-    spacegroup(crystal; symprec = 1e-5)
-
-Space group of `crystal` as `(; symbol, number)`, e.g. `(symbol = "Fm-3m", number = 225)`.
-
-Requires `using Spglib`. `symprec` is the spglib distance tolerance in Å.
-"""
-function spacegroup end
 
 """
     coupled_axes(crystal; symprec = 1e-5)
