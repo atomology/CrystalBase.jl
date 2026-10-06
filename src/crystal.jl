@@ -254,7 +254,8 @@ function coupled_axes end
 Monkhorst--Pack grid `(n1, n2, n3)` sized from the reciprocal lattice.
 
 `density` is k-points per unit reciprocal length (Å); each axis gets
-`ceil(|bᵢ| · density)`. Larger `density` gives a denser grid.
+`ceil(|bᵢ| · density)`, where `|bᵢ|` includes the 2π. Larger `density`
+gives a denser grid.
 
 With a [`Crystal`](@ref) and `symmetrize = true` (requires `using Spglib`),
 axes coupled by the point group (see [`coupled_axes`](@ref)) are raised to
