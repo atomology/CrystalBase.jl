@@ -10,9 +10,9 @@ projects = ["test", "docs"]
 DocStringExtensions = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 OrderedCollections = "bac558e1-5e72-5ebc-8fee-abe8a469f55d"
-Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 PeriodicTable = "7b2266bf-644c-5ea3-82d8-af4bbd25a884"
 PrecompileTools = "aea7be01-6a6a-4083-8856-8a6e6704d82a"
+Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
 [weakdeps]
@@ -29,7 +29,7 @@ CrystalBaseSpglibExt = "Spglib"
 [compat]
 Bravais = "0.2"
 Brillouin = "0.5.8"
-DocStringExtensions = "0.9"
+DocStringExtensions = "0.9, 0.10"
 OrderedCollections = "1.8, 2"
 PeriodicTable = "1.1"
 PrecompileTools = "1"
