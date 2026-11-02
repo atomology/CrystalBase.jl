@@ -1,4 +1,19 @@
-using PeriodicTable: elements
+# Element symbols indexed by atomic number, as in PeriodicTable.jl, which is
+# not a dependency since it loads Unitful (~0.1 s) for this table alone
+const ELEMENT_SYMBOLS = (
+    "H", "He", "Li", "Be", "B", "C", "N", "O", "F", "Ne",
+    "Na", "Mg", "Al", "Si", "P", "S", "Cl", "Ar", "K", "Ca",
+    "Sc", "Ti", "V", "Cr", "Mn", "Fe", "Co", "Ni", "Cu", "Zn",
+    "Ga", "Ge", "As", "Se", "Br", "Kr", "Rb", "Sr", "Y", "Zr",
+    "Nb", "Mo", "Tc", "Ru", "Rh", "Pd", "Ag", "Cd", "In", "Sn",
+    "Sb", "Te", "I", "Xe", "Cs", "Ba", "La", "Ce", "Pr", "Nd",
+    "Pm", "Sm", "Eu", "Gd", "Tb", "Dy", "Ho", "Er", "Tm", "Yb",
+    "Lu", "Hf", "Ta", "W", "Re", "Os", "Ir", "Pt", "Au", "Hg",
+    "Tl", "Pb", "Bi", "Po", "At", "Rn", "Fr", "Ra", "Ac", "Th",
+    "Pa", "U", "Np", "Pu", "Am", "Cm", "Bk", "Cf", "Es", "Fm",
+    "Md", "No", "Lr", "Rf", "Db", "Sg", "Bh", "Hs", "Mt", "Ds",
+    "Rg", "Cn", "Nh", "Fl", "Mc", "Lv", "Ts", "Og", "Uue",
+)
 
 export atomic_number, atomic_symbol
 
@@ -34,10 +49,9 @@ function atomic_number(symbol::Union{AbstractString, Symbol})
 end
 
 function atomic_number(symbols::AbstractVector)
-    table = [e.symbol for e in elements]
     return map(symbols) do s
         string(s) == DUMMY_SYMBOL && return 0
-        findfirst(x -> x == string(s), table)
+        findfirst(==(string(s)), ELEMENT_SYMBOLS)
     end
 end
 
@@ -94,7 +108,7 @@ atomic_symbol(["Si", "O2", "Cl_dn"])
 ```
 """
 function atomic_symbol(number::Integer)
-    return number == 0 ? DUMMY_SYMBOL : elements[number].symbol
+    return number == 0 ? DUMMY_SYMBOL : ELEMENT_SYMBOLS[number]
 end
 
 function atomic_symbol(label::Union{AbstractString, Symbol})
